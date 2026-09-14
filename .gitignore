@@ -28,6 +28,7 @@ yarn-error.log*
 .env
 *.json
 !package.json
+!package-lock.json
 !tsconfig.json
 
 # typescript
