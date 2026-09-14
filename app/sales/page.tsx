@@ -1,0 +1,377 @@
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import AppShell from '@/components/layout/AppShell';
+import { 
+  ShoppingCart, 
+  Download, 
+  Plus, 
+  CheckCircle, 
+  Clock, 
+  FileText, 
+  Search, 
+  TrendingUp, 
+  Package, 
+  Printer, 
+  ChevronRight,
+  Loader2,
+  AlertCircle
+} from 'lucide-react';
+import { Sale, Customer, Product, SalesKPIs } from '@/lib/types';
+import { formatCurrency } from '@/lib/calculations';
+import CreateInvoiceModal from '@/components/sales/CreateInvoiceModal';
+import ViewInvoiceModal from '@/components/customers/ViewInvoiceModal';
+import { toast } from 'sonner';
+
+export default function SalesPage() {
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [kpis, setKpis] = useState<SalesKPIs | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID'>('ALL');
+
+  // Modals
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Sale | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [salesRes, customersRes, productsRes] = await Promise.all([
+        fetch('/api/sales?kpis=true'),
+        fetch('/api/customers'),
+        fetch('/api/products'),
+      ]);
+
+      const [salesData, customersData, productsData] = await Promise.all([
+        salesRes.json(),
+        customersRes.json(),
+        productsRes.json(),
+      ]);
+
+      if (salesData.success) {
+        setSales(salesData.sales || []);
+        setKpis(salesData.kpis || null);
+      }
+      if (customersData.success) {
+        setCustomers(customersData.customers || []);
+      }
+      if (productsData.success) {
+        setProducts(productsData.products || []);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Failed to load sales data from Google Sheets');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Filtered sales
+  const filteredSales = useMemo(() => {
+    return sales.filter((s) => {
+      // Status filter
+      if (statusFilter === 'UNPAID' && s.status !== 'Unpaid') return false;
+      if (statusFilter === 'PAID' && s.status !== 'Paid') return false;
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchInv = s.invoice_number.toLowerCase().includes(q);
+        const matchCust = (s.customer_name || '').toLowerCase().includes(q);
+        const matchDate = s.date.includes(q);
+        if (!matchInv && !matchCust && !matchDate) return false;
+      }
+
+      return true;
+    });
+  }, [sales, statusFilter, searchQuery]);
+
+  const handleInvoiceCreated = (newSale: Sale) => {
+    setSales(prev => [newSale, ...prev]);
+    fetchData();
+  };
+
+  const handleExportCSV = () => {
+    if (sales.length === 0) {
+      toast.error('No sales data to export');
+      return;
+    }
+    const headers = ['Invoice Number', 'Date', 'Customer', 'Subtotal', 'GST', 'Total', 'Status'];
+    const rows = sales.map(s => [
+      s.invoice_number,
+      s.date,
+      `"${s.customer_name || 'Buyer'}"`,
+      String(s.subtotal),
+      String(s.gst),
+      String(s.total),
+      s.status,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Threadly_Sales_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Sales ledger exported to CSV successfully');
+  };
+
+  const customerForInvoice = useMemo(() => {
+    if (!selectedInvoice) return null;
+    return customers.find(c => c.customer_id === selectedInvoice.customer_id) || null;
+  }, [selectedInvoice, customers]);
+
+  return (
+    <AppShell
+      searchPlaceholder="Search invoices, buyer names, amounts, dates..."
+      onSearch={(q) => setSearchQuery(q)}
+    >
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2 mb-6">
+        <div>
+          <span className="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">
+            SALES & INVOICING
+          </span>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-neutral-900 mt-0.5">
+            Factory Sales & Invoicing
+          </h1>
+          <p className="text-xs text-neutral-400 mt-0.5">
+            Generate wholesale dispatch invoices, validate stock availability, and update buyer ledgers.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border border-neutral-200/80 text-xs font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all"
+          >
+            <Download className="w-3.5 h-3.5 text-neutral-500" />
+            <span>Export All Sales</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-neutral-900 text-white hover:bg-black text-xs font-semibold shadow-sm transition-all"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Create Invoice</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 4 Floating KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+        {/* KPI 1: TODAY'S BILLED */}
+        <div className="floating-card p-5">
+          <div className="flex items-center justify-between text-neutral-400 mb-2">
+            <span className="text-xs font-medium text-neutral-500">TODAY'S BILLED</span>
+            <div className="p-1 rounded-lg bg-neutral-100 text-neutral-600">
+              <ShoppingCart className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-neutral-900 tracking-tight">
+            {kpis ? formatCurrency(kpis.todayBilled) : '₹ 58,105'}
+          </div>
+          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
+            <span>↑ 12% vs yesterday</span>
+          </div>
+        </div>
+
+        {/* KPI 2: MONTHLY BILLED */}
+        <div className="floating-card p-5">
+          <div className="flex items-center justify-between text-neutral-400 mb-2">
+            <span className="text-xs font-medium text-neutral-500">MONTHLY BILLED</span>
+            <span className="text-[11px] text-emerald-600 font-medium">↑ 8%</span>
+          </div>
+          <div className="text-2xl font-bold text-neutral-900 tracking-tight">
+            {kpis ? formatCurrency(kpis.monthlyBilled) : '₹ 3,48,200'}
+          </div>
+          <div className="text-[11px] text-neutral-400 font-medium mt-1">
+            May 2025 factory orders
+          </div>
+        </div>
+
+        {/* KPI 3: UNPAID / KHATA DUE */}
+        <div className="floating-card p-5">
+          <div className="flex items-center justify-between text-neutral-400 mb-2">
+            <span className="text-xs font-medium text-neutral-500">UNPAID / KHATA DUE</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
+              Action Req.
+            </span>
+          </div>
+          <div className="text-2xl font-bold text-neutral-900 tracking-tight">
+            {kpis ? formatCurrency(kpis.unpaidAmount) : '₹ 1,05,055'}
+          </div>
+          <div className="text-[11px] text-amber-600 font-medium mt-1">
+            Pending buyer settlement
+          </div>
+        </div>
+
+        {/* KPI 4: TOTAL UNITS DISPATCHED */}
+        <div className="floating-card p-5">
+          <div className="flex items-center justify-between text-neutral-400 mb-2">
+            <span className="text-xs font-medium text-neutral-500">UNITS DISPATCHED</span>
+            <div className="p-1 rounded-lg bg-neutral-100 text-neutral-600">
+              <Package className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-neutral-900 tracking-tight">
+            {kpis ? `${kpis.totalUnitsDispatched} Pcs` : '485 Pcs'}
+          </div>
+          <div className="text-[11px] text-neutral-400 font-medium mt-1">
+            Across {sales.length} fulfilled batches
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs & Invoices List */}
+      <div className="floating-card p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-100">
+          {/* Status Filter Pills */}
+          <div className="flex items-center gap-1.5 p-1 bg-neutral-100/70 rounded-full text-xs">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-4 py-1.5 rounded-full font-medium transition-all ${
+                statusFilter === 'ALL' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              All Invoices ({sales.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('UNPAID')}
+              className={`px-4 py-1.5 rounded-full font-medium transition-all ${
+                statusFilter === 'UNPAID' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              Unpaid (Khata Due)
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PAID')}
+              className={`px-4 py-1.5 rounded-full font-medium transition-all ${
+                statusFilter === 'PAID' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              Paid & Settled
+            </button>
+          </div>
+
+          <div className="text-xs text-neutral-400">
+            Showing <span className="font-semibold text-neutral-900">{filteredSales.length}</span> invoices
+          </div>
+        </div>
+
+        {/* Invoices Table */}
+        <div className="overflow-x-auto mt-2">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-neutral-400">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-xs">Fetching invoices from Google Sheets...</span>
+            </div>
+          ) : filteredSales.length === 0 ? (
+            <div className="text-center py-16 text-neutral-400 text-xs">
+              No matching invoices found.
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
+              <thead className="text-[10px] uppercase font-semibold text-neutral-400 border-b border-neutral-100 tracking-wider">
+                <tr>
+                  <th className="py-3.5 px-4">Invoice #</th>
+                  <th className="py-3.5 px-4">Date</th>
+                  <th className="py-3.5 px-4">Wholesale Buyer</th>
+                  <th className="py-3.5 px-4">Items Shipped</th>
+                  <th className="py-3.5 px-4 text-right">Tax (GST)</th>
+                  <th className="py-3.5 px-4 text-right">Grand Total</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {filteredSales.map((sale) => {
+                  const isUnpaid = sale.status === 'Unpaid';
+                  const totalUnits = sale.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
+                  const itemSummary = sale.items && sale.items.length > 0
+                    ? `${totalUnits} Pcs (${sale.items.map(i => `${i.sku}`).join(', ')})`
+                    : 'Garment Dispatch Lot';
+
+                  return (
+                    <tr key={sale.invoice_id} className="hover:bg-neutral-50/60 transition-colors group">
+                      <td className="py-4 px-4 font-bold font-mono text-neutral-900">
+                        #{sale.invoice_number}
+                      </td>
+                      <td className="py-4 px-4 text-neutral-500 whitespace-nowrap">
+                        {sale.date}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="font-semibold text-neutral-900">{sale.customer_name}</div>
+                        <div className="text-[11px] text-neutral-400">Net 15 Days Term</div>
+                      </td>
+                      <td className="py-4 px-4 text-neutral-600">
+                        <div className="font-medium text-neutral-800">{itemSummary}</div>
+                      </td>
+                      <td className="py-4 px-4 text-right text-neutral-500 font-medium">
+                        {formatCurrency(sale.gst)}
+                      </td>
+                      <td className="py-4 px-4 text-right font-bold text-neutral-900 text-sm">
+                        {formatCurrency(sale.total)}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {isUnpaid ? (
+                          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
+                            Unpaid - Due in 15d
+                          </span>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
+                            Paid (Settled)
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedInvoice(sale)}
+                          className="px-3 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all"
+                        >
+                          View Bill
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
+      <CreateInvoiceModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onInvoiceCreated={handleInvoiceCreated}
+        customers={customers}
+        products={products}
+      />
+
+      <ViewInvoiceModal
+        invoice={selectedInvoice}
+        customer={customerForInvoice}
+        isOpen={!!selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+      />
+    </AppShell>
+  );
+}
