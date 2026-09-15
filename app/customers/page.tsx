@@ -19,11 +19,13 @@ import {
   Edit, 
   CreditCard,
   Loader2,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { Customer, CustomerKPIs, Sale, Payment } from '@/lib/types';
 import { formatCurrency, formatCompactCurrency } from '@/lib/calculations';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
+import EditCustomerModal from '@/components/customers/EditCustomerModal';
 import RecordPaymentModal from '@/components/customers/RecordPaymentModal';
 import ViewInvoiceModal from '@/components/customers/ViewInvoiceModal';
 import { toast } from 'sonner';
@@ -41,8 +43,11 @@ export default function CustomersPage() {
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Sale | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Fetch all customers & KPIs
   const fetchCustomers = async (retainSelectedId?: string) => {
@@ -123,6 +128,39 @@ export default function CustomersPage() {
     fetchCustomers(newCust.customer_id);
   };
 
+  const handleCustomerUpdated = (updated: Customer) => {
+    setCustomers(customers.map(c => c.customer_id === updated.customer_id ? updated : c));
+    if (selectedCustomerId) {
+      fetchCustomerLedger(selectedCustomerId);
+    }
+    fetchCustomers(selectedCustomerId || undefined);
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!deletingCustomer) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/customers/${deletingCustomer.customer_id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete customer');
+      }
+      toast.success(`Buyer "${deletingCustomer.name}" archived successfully`);
+      setCustomers(customers.filter(c => c.customer_id !== deletingCustomer.customer_id));
+      if (selectedCustomerId === deletingCustomer.customer_id) {
+        setSelectedCustomerId(null);
+      }
+      setDeletingCustomer(null);
+      fetchCustomers();
+    } catch (err: any) {
+      toast.error(err.message || 'Error deleting buyer');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const handlePaymentRecorded = (payment: Payment) => {
     if (selectedCustomerId) {
       fetchCustomerLedger(selectedCustomerId);
@@ -160,7 +198,7 @@ export default function CustomersPage() {
     if (!selectedCustomer) return;
     const cleanPhone = selectedCustomer.phone.replace(/[^0-9]/g, '');
     const message = encodeURIComponent(
-      `Hello ${selectedCustomer.name}, this is a friendly reminder from Preston Retro regarding your outstanding balance of ${formatCurrency(selectedCustomer.outstanding || 0)}. Please arrange payment at your earliest convenience. Thank you!`
+      `Hello ${selectedCustomer.name}, this is a friendly reminder from Pristine Retro Enterprise regarding your outstanding balance of ${formatCurrency(selectedCustomer.outstanding || 0)}. Please arrange payment at your earliest convenience. Thank you!`
     );
     if (cleanPhone) {
       window.open(`https://wa.me/${cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone}?text=${message}`, '_blank');
@@ -489,17 +527,26 @@ export default function CustomersPage() {
                     <button
                       type="button"
                       onClick={() => setIsPaymentModalOpen(true)}
-                      className="px-5 py-2.5 rounded-full bg-neutral-900 text-white hover:bg-black text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+                      className="px-4 py-2.5 rounded-full bg-neutral-900 text-white hover:bg-black text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Record Payment</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => toast.info('Edit customer modal ready')}
-                      className="px-4 py-2.5 rounded-full bg-white border border-neutral-200/80 text-neutral-700 text-xs font-semibold hover:bg-neutral-50 shadow-sm transition-all"
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-full bg-white border border-neutral-200 text-neutral-700 text-xs font-semibold hover:bg-neutral-50 shadow-sm transition-all"
                     >
-                      Edit
+                      <Edit className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingCustomer(selectedCustomer)}
+                      className="p-2.5 rounded-full bg-white border border-neutral-200 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 shadow-sm transition-all"
+                      title="Archive Buyer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -577,7 +624,7 @@ export default function CustomersPage() {
                     <span className="text-base font-bold text-neutral-900 mt-1 block">
                       {selectedCustomer.overdue_status === 'healthy' ? 'Good Standing' : 'Overdue Alert'}
                     </span>
-                    <span className="text-[10px] text-neutral-500 font-medium mt-0.5 block">Wholesale Khata</span>
+                    <span className="text-[10px] text-emerald-600 font-medium mt-0.5 block">Net-{selectedCustomer.credit_days || 15} Days Term</span>
                   </div>
                 </div>
 
@@ -745,6 +792,46 @@ export default function CustomersPage() {
       </div>
 
       {/* Modals */}
+      {/* Edit Customer Modal */}
+      <EditCustomerModal
+        customer={selectedCustomer}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onCustomerUpdated={handleCustomerUpdated}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {deletingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl border border-neutral-100 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-neutral-900">Archive Buyer?</h3>
+            <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+              Are you sure you want to archive <span className="font-semibold text-neutral-800">{deletingCustomer.name}</span>? Their order history and ledger balances will remain safely in database.
+            </p>
+            <div className="flex items-center justify-center gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => setDeletingCustomer(null)}
+                className="px-4 py-2 rounded-full border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleDeleteCustomer}
+                className="px-4 py-2 rounded-full bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 shadow-sm transition-all disabled:opacity-50"
+              >
+                {deleteLoading ? 'Archiving...' : 'Yes, Archive'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AddCustomerModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

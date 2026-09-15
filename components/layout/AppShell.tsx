@@ -31,7 +31,7 @@ export default function AppShell({ children, searchPlaceholder, onSearch }: AppS
         <footer className="px-8 py-5 border-t border-neutral-200/50 flex items-center justify-between text-xs text-neutral-400">
           <p className="italic font-serif">“Better systems. Smoother manufacturing.”</p>
           <p className="font-medium tracking-wide">
-            Preston Retro <span className="mx-1">·</span> Factory Management System v1.0
+            Pristine Retro <span className="mx-1">·</span> Factory Management System v1.0
           </p>
         </footer>
       </div>

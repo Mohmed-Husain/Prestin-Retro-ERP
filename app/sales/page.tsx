@@ -15,11 +15,14 @@ import {
   Printer, 
   ChevronRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { Sale, Customer, Product, SalesKPIs } from '@/lib/types';
 import { formatCurrency } from '@/lib/calculations';
 import CreateInvoiceModal from '@/components/sales/CreateInvoiceModal';
+import EditInvoiceModal from '@/components/sales/EditInvoiceModal';
 import ViewInvoiceModal from '@/components/customers/ViewInvoiceModal';
 import { toast } from 'sonner';
 
@@ -35,6 +38,9 @@ export default function SalesPage() {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Sale | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Sale | null>(null);
+  const [deletingInvoice, setDeletingInvoice] = useState<Sale | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -143,6 +149,34 @@ export default function SalesPage() {
     }
   };
 
+
+  const handleInvoiceUpdated = (updated: Sale) => {
+    setSales(sales.map(s => s.invoice_id === updated.invoice_id ? { ...s, ...updated } : s));
+    fetchData();
+  };
+
+  const handleDeleteInvoice = async () => {
+    if (!deletingInvoice) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/sales/${deletingInvoice.invoice_id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete invoice');
+      }
+      toast.success(`Invoice #${deletingInvoice.invoice_number} deleted and stock restored!`);
+      setSales(sales.filter(s => s.invoice_id !== deletingInvoice.invoice_id));
+      setDeletingInvoice(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Error deleting invoice');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const handleInvoiceCreated = (newSale: Sale) => {
     setSales(prev => [newSale, ...prev]);
     fetchData();
@@ -168,7 +202,7 @@ export default function SalesPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `PrestonRetro_Sales_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `PristineRetro_Sales_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -442,7 +476,23 @@ export default function SalesPage() {
                             onClick={() => setSelectedInvoice(sale)}
                             className="px-3 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all whitespace-nowrap"
                           >
-                            View Bill
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingInvoice(sale)}
+                            className="p-1.5 rounded-full bg-white border border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 shadow-sm transition-all"
+                            title="Edit Invoice"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingInvoice(sale)}
+                            className="p-1.5 rounded-full bg-white border border-neutral-200 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 shadow-sm transition-all"
+                            title="Delete Invoice & Restore Stock"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -456,6 +506,50 @@ export default function SalesPage() {
       </div>
 
       {/* Modals */}
+      {/* Edit Invoice Modal */}
+      <EditInvoiceModal
+        invoice={editingInvoice}
+        customers={customers}
+        products={products}
+        isOpen={!!editingInvoice}
+        onClose={() => setEditingInvoice(null)}
+        onInvoiceUpdated={handleInvoiceUpdated}
+      />
+
+      {/* Delete Invoice Confirmation Modal */}
+      {deletingInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl border border-neutral-100 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-neutral-900">
+              Delete Invoice #{deletingInvoice.invoice_number}?
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+              This invoice will be removed and its garment quantities will be <span className="font-semibold text-emerald-600">automatically restored into warehouse inventory</span>.
+            </p>
+            <div className="flex items-center justify-center gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => setDeletingInvoice(null)}
+                className="px-4 py-2 rounded-full border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleDeleteInvoice}
+                className="px-4 py-2 rounded-full bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 shadow-sm transition-all disabled:opacity-50"
+              >
+                {deleteLoading ? 'Restoring Stock...' : 'Delete & Restore'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CreateInvoiceModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

@@ -8,7 +8,7 @@ export async function getFactorySettings(): Promise<Record<string, string>> {
   const rows = await syncManager.getRows(TAB_NAME);
   const meta = rowsToObjects(rows, mappers.rowToMetadata);
   const settings: Record<string, string> = {
-    company_name: 'PRESTON RETRO',
+    company_name: 'PRISTINE RETRO ENTERPRISE',
     company_logo: '',
     user_name: 'Aman Raj',
     app_pin: '1234',

@@ -3,7 +3,7 @@ import './globals.css';
 import AppLock from '@/components/auth/AppLock';
 
 export const metadata: Metadata = {
-  title: 'Preston Retro — Factory OS',
+  title: 'Pristine Retro Enterprise — Factory OS',
   description: 'Production-quality OS for modern apparel factories, powered by Google Sheets and Next.js.',
 };
 

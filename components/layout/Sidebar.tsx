@@ -24,15 +24,15 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [companyName, setCompanyName] = React.useState('Preston Retro');
+  const [companyName, setCompanyName] = React.useState('Pristine Retro');
   const [companyLogo, setCompanyLogo] = React.useState('');
   const [userName, setUserName] = React.useState('Aman Raj');
 
   React.useEffect(() => {
     // Load from localStorage if present for immediate display
-    const savedName = localStorage.getItem('preston_company_name');
-    const savedLogo = localStorage.getItem('preston_company_logo');
-    const savedUser = localStorage.getItem('preston_user_name');
+    const savedName = localStorage.getItem('pristine_company_name');
+    const savedLogo = localStorage.getItem('pristine_company_logo');
+    const savedUser = localStorage.getItem('pristine_user_name');
     if (savedName) setCompanyName(savedName);
     if (savedLogo) setCompanyLogo(savedLogo);
     if (savedUser) setUserName(savedUser);
@@ -44,15 +44,15 @@ export default function Sidebar() {
         if (data.success && data.settings) {
           if (data.settings.company_name) {
             setCompanyName(data.settings.company_name);
-            localStorage.setItem('preston_company_name', data.settings.company_name);
+            localStorage.setItem('pristine_company_name', data.settings.company_name);
           }
           if (data.settings.company_logo !== undefined) {
             setCompanyLogo(data.settings.company_logo);
-            localStorage.setItem('preston_company_logo', data.settings.company_logo);
+            localStorage.setItem('pristine_company_logo', data.settings.company_logo);
           }
           if (data.settings.user_name) {
             setUserName(data.settings.user_name);
-            localStorage.setItem('preston_user_name', data.settings.user_name);
+            localStorage.setItem('pristine_user_name', data.settings.user_name);
           }
         }
       })

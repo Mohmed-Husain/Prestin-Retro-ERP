@@ -33,7 +33,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [settings, setSettings] = useState({
-    company_name: "PRESTON RETRO",
+    company_name: "PRISTINE RETRO ENTERPRISE",
     company_logo: "",
     user_name: "Aman Raj",
     app_pin: "1234",
@@ -47,10 +47,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Read cached values first
-    const savedName = localStorage.getItem("preston_company_name");
-    const savedLogo = localStorage.getItem("preston_company_logo");
-    const savedUser = localStorage.getItem("preston_user_name");
-    const savedPin = localStorage.getItem("preston_app_pin");
+    const savedName = localStorage.getItem("pristine_company_name");
+    const savedLogo = localStorage.getItem("pristine_company_logo");
+    const savedUser = localStorage.getItem("pristine_user_name");
+    const savedPin = localStorage.getItem("pristine_app_pin");
     if (savedName || savedUser || savedPin) {
       setSettings(prev => ({
         ...prev,
@@ -67,10 +67,10 @@ export default function SettingsPage() {
         if (data.success && data.settings) {
           const cleanPin = data.settings.app_pin ? String(data.settings.app_pin).padStart(4, '0') : "1234";
           setSettings(prev => ({ ...prev, ...data.settings, app_pin: cleanPin }));
-          if (data.settings.company_name) localStorage.setItem("preston_company_name", data.settings.company_name);
-          if (data.settings.company_logo !== undefined) localStorage.setItem("preston_company_logo", data.settings.company_logo);
-          if (data.settings.user_name) localStorage.setItem("preston_user_name", data.settings.user_name);
-          localStorage.setItem("preston_app_pin", cleanPin);
+          if (data.settings.company_name) localStorage.setItem("pristine_company_name", data.settings.company_name);
+          if (data.settings.company_logo !== undefined) localStorage.setItem("pristine_company_logo", data.settings.company_logo);
+          if (data.settings.user_name) localStorage.setItem("pristine_user_name", data.settings.user_name);
+          localStorage.setItem("pristine_app_pin", cleanPin);
         }
       })
       .catch(console.error)
@@ -97,10 +97,10 @@ export default function SettingsPage() {
       }
 
       // Sync local storage for instantaneous updates
-      localStorage.setItem("preston_company_name", settings.company_name);
-      localStorage.setItem("preston_company_logo", settings.company_logo);
-      localStorage.setItem("preston_user_name", settings.user_name);
-      localStorage.setItem("preston_app_pin", settings.app_pin);
+      localStorage.setItem("pristine_company_name", settings.company_name);
+      localStorage.setItem("pristine_company_logo", settings.company_logo);
+      localStorage.setItem("pristine_user_name", settings.user_name);
+      localStorage.setItem("pristine_app_pin", settings.app_pin);
 
       toast.success("Settings saved to Google Sheets Metadata tab!");
       window.dispatchEvent(new Event("storage"));
@@ -486,7 +486,7 @@ export default function SettingsPage() {
 
           {/* Vercel Ready Card */}
           <div className="floating-card p-6 bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
-            <h4 className="font-bold text-sm">Preston Retro Factory OS</h4>
+            <h4 className="font-bold text-sm">Pristine Retro Enterprise Factory OS</h4>
             <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
               Google Sheets operates as your serverless database with real-time sync, zero operational DB cost, and instant Excel interchange.
             </p>

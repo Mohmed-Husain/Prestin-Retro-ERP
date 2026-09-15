@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCustomerById, updateCustomer, getCustomerLedger } from '@/lib/repositories/customers';
+import { getCustomerById, updateCustomer, softDeleteCustomer, getCustomerLedger } from '@/lib/repositories/customers';
 
 export async function GET(
   request: Request,
@@ -35,6 +35,19 @@ export async function PATCH(
     const body = await request.json();
     const updated = await updateCustomer(id, body);
     return NextResponse.json({ success: true, customer: updated });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await softDeleteCustomer(id);
+    return NextResponse.json({ success: true, message: 'Buyer archived successfully' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

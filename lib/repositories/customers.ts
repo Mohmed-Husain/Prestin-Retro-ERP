@@ -69,6 +69,26 @@ export async function createCustomer(
   return newCustomer;
 }
 
+
+export async function softDeleteCustomer(customerId: string): Promise<void> {
+  const rows = await syncManager.getRows(TAB_NAME);
+  const customersWithIndex = rowsToObjects(rows, mappers.rowToCustomer);
+  const target = customersWithIndex.find(c => c.customer_id === customerId);
+
+  if (!target) {
+    throw new Error(`Customer with ID ${customerId} not found`);
+  }
+
+  const updated: Customer = {
+    ...target,
+    is_active: false,
+    updated_at: new Date().toISOString(),
+  };
+
+  const rowValues = mappers.customerToRow(updated);
+  await syncManager.updateRow(TAB_NAME, (target as any)._rowIndex, rowValues);
+}
+
 export async function updateCustomer(customerId: string, updates: Partial<Customer>): Promise<Customer> {
   const rows = await syncManager.getRows(TAB_NAME);
   const customersWithIndex = rowsToObjects(rows, mappers.rowToCustomer);

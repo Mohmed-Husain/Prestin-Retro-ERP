@@ -94,7 +94,7 @@ export default function AppLock({ children }: AppLockProps) {
               errorShake ? 'animate-shake' : ''
             }`}
           >
-            {/* Preston Retro Seal Icon */}
+            {/* Pristine Retro Enterprise Seal Icon */}
             <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-neutral-900 shadow-md mb-4 flex items-center justify-center bg-black">
               <img
                 src="/logo.jpg"
@@ -104,7 +104,7 @@ export default function AppLock({ children }: AppLockProps) {
             </div>
 
             <h2 className="text-xl font-bold tracking-tight text-neutral-900">
-              Preston Retro
+              Pristine Retro Enterprise
             </h2>
             <p className="text-xs text-neutral-500 mt-1 mb-6">
               Enter 4-digit PIN to access Factory OS

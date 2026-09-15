@@ -206,7 +206,7 @@ export async function GET(request: Request) {
       return new Response(buf, {
         headers: {
           "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "Content-Disposition": "attachment; filename=Preston_Retro_ERP_Export_" + new Date().toISOString().split("T")[0] + ".xlsx",
+          "Content-Disposition": "attachment; filename=Pristine_Retro_ERP_Export_" + new Date().toISOString().split("T")[0] + ".xlsx",
         },
       });
     }

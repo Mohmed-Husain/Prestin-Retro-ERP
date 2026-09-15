@@ -42,6 +42,7 @@ export interface Customer {
   updated_at: string;
   contact_person?: string;
   email?: string;
+  credit_days?: number;
   // Computed fields
   total_billed?: number;
   total_paid?: number;

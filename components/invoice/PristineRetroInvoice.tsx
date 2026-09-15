@@ -4,13 +4,34 @@ import React from 'react';
 import { Sale, Customer } from '@/lib/types';
 import { numberToIndianRupees } from '@/lib/numberToWords';
 
+export interface InvoiceCustomization {
+  companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  companyGst?: string;
+  companyState?: string;
+  transportCarrier?: string;
+  vehicleNo?: string;
+  poNumber?: string;
+  destination?: string;
+  termsAndConditions?: string;
+  notes?: string;
+  showBankDetails?: boolean;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchName?: string;
+  signatoryTitle?: string;
+}
+
 interface PristineRetroInvoiceProps {
   invoice: Sale;
   customer?: Customer | null;
+  customization?: InvoiceCustomization;
 }
 
-export default function PristineRetroInvoice({ invoice, customer }: PristineRetroInvoiceProps) {
-  // Format date to DD-MM-YYYY
+export default function PristineRetroInvoice({ invoice, customer, customization }: PristineRetroInvoiceProps) {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const parts = dateStr.split('-');
@@ -31,6 +52,16 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
   const balanceAmount = Math.max(0, grandTotal - receivedAmount);
   const amountInWords = numberToIndianRupees(grandTotal);
 
+  // Customization Overrides
+  const companyName = customization?.companyName || 'PRISTINE RETRO ENTERPRISE';
+  const companyAddress = customization?.companyAddress || 'Hussain tekri, Palanpur highway, Kanodar, Gujarat';
+  const companyPhone = customization?.companyPhone || '8758206574';
+  const companyEmail = customization?.companyEmail || 'Pp321753@gmail.com';
+  const companyGst = customization?.companyGst || '24ABIFP5127C1ZJ';
+  const companyState = customization?.companyState || '24-Gujarat';
+  const signatoryTitle = customization?.signatoryTitle || 'Authorized Signatory';
+  const termsText = customization?.termsAndConditions || 'Thank you for doing business with us.';
+
   return (
     <div className="bg-white text-black p-8 max-w-3xl mx-auto font-sans leading-normal select-text print:p-0 print:max-w-none print:shadow-none border border-neutral-200/80 rounded-2xl shadow-sm">
       {/* Header Section */}
@@ -38,18 +69,18 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
         {/* Company Info (Left) */}
         <div>
           <h1 className="text-xl font-bold tracking-tight text-neutral-900 uppercase">
-            PRESTON RETRO ENTERPRISE
+            {companyName}
           </h1>
           <div className="text-xs text-neutral-800 space-y-0.5 mt-1 font-medium">
-            <p>Hussain tekri, Palanpur highway, Kanodar, Gujarat</p>
-            <p>Phone no.: 8758206574</p>
-            <p>Email: Pp321753@gmail.com</p>
-            <p className="font-semibold">GSTIN: 24ABIFP5127C1ZJ</p>
-            <p>State: 24-Gujarat</p>
+            <p>{companyAddress}</p>
+            <p>Phone no.: {companyPhone}</p>
+            <p>Email: {companyEmail}</p>
+            <p className="font-semibold">GSTIN: {companyGst}</p>
+            <p>State: {companyState}</p>
           </div>
         </div>
 
-        {/* Vintage Seal Stamp Logo (Right) */}
+        {/* Official Seal Stamp Logo (Right) */}
         <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center p-0.5 border border-neutral-200 shadow-xs flex-shrink-0">
           <img
             src="/logo.jpg"
@@ -85,10 +116,19 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
           )}
         </div>
 
-        <div className="text-right">
+        <div className="text-right space-y-0.5">
           <span className="font-bold text-neutral-900 block mb-1 text-[13px]">Invoice Details</span>
           <p className="text-neutral-800 font-medium">Invoice No.: {invoiceNum}</p>
-          <p className="text-neutral-800 font-medium mt-0.5">Date: {formatDate(invoice.date)}</p>
+          <p className="text-neutral-800 font-medium">Date: {formatDate(invoice.date)}</p>
+          {customization?.poNumber && (
+            <p className="text-neutral-600 font-mono text-[11px]">PO No: {customization.poNumber}</p>
+          )}
+          {customization?.vehicleNo && (
+            <p className="text-neutral-600 font-mono text-[11px]">Vehicle: {customization.vehicleNo}</p>
+          )}
+          {customization?.transportCarrier && (
+            <p className="text-neutral-600 text-[11px]">Transport: {customization.transportCarrier}</p>
+          )}
         </div>
       </div>
 
@@ -147,7 +187,7 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
 
       {/* Bottom Section (2 Columns) */}
       <div className="grid grid-cols-2 gap-8 pt-3 text-xs">
-        {/* Left: Words & Terms */}
+        {/* Left: Words & Terms & Optional Bank Details */}
         <div className="space-y-4">
           <div>
             <span className="font-bold text-neutral-900 block mb-1">Invoice Amount In Words</span>
@@ -156,31 +196,51 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
             </p>
           </div>
 
-          <div className="pt-2">
+          {/* Optional Bank Details Box */}
+          {customization?.showBankDetails && (
+            <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[11px] space-y-0.5">
+              <span className="font-bold text-neutral-900 block mb-1">Bank Payment Details:</span>
+              <p><span className="text-neutral-500">Bank:</span> <span className="font-semibold">{customization.bankName || 'HDFC Bank'}</span></p>
+              <p><span className="text-neutral-500">A/C No:</span> <span className="font-mono font-bold">{customization.accountNumber || '50200084920194'}</span></p>
+              <p><span className="text-neutral-500">IFSC:</span> <span className="font-mono">{customization.ifscCode || 'HDFC0000241'}</span></p>
+              {customization.branchName && (
+                <p><span className="text-neutral-500">Branch:</span> <span>{customization.branchName}</span></p>
+              )}
+            </div>
+          )}
+
+          {customization?.notes && (
+            <div>
+              <span className="font-bold text-neutral-900 block mb-0.5">Notes</span>
+              <p className="text-neutral-600">{customization.notes}</p>
+            </div>
+          )}
+
+          <div className="pt-1">
             <span className="font-bold text-neutral-900 block mb-1">Terms And Conditions</span>
-            <p className="text-neutral-700">Thank you for doing business with us.</p>
+            <p className="text-neutral-700 whitespace-pre-line">{termsText}</p>
           </div>
         </div>
 
         {/* Right: Calculations & Signature */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-neutral-800 font-medium px-2 py-0.5">
-              <span>Sub Total</span>
-              <span>₹ {subTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-            </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-neutral-800 font-medium px-2 py-0.5">
+            <span>Sub Total</span>
+            <span>₹ {subTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+          </div>
 
-            {invoice.gst > 0 && (
-              <div className="flex justify-between text-neutral-600 px-2 py-0.5">
-                <span>GST (Tax)</span>
-                <span>₹ {invoice.gst.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-              </div>
-            )}
-
-            {/* Purple Total Highlight Bar */}
-            <div className="flex justify-between font-bold bg-[#818cf8] text-white px-3 py-1.5 rounded-sm">
-              <span>Total</span>
-              <span>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+          {invoice.gst > 0 && (
+            <div className="flex justify-between text-neutral-600 px-2 py-0.5">
+              <span>GST (Tax)</span>
+              <span>₹ {invoice.gst.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
             </div>
+          )}
+
+          {/* Purple Total Highlight Bar */}
+          <div className="flex justify-between font-bold bg-[#818cf8] text-white px-3 py-1.5 rounded-sm">
+            <span>Total</span>
+            <span>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+          </div>
 
           <div className="flex justify-between text-neutral-700 px-2 py-0.5">
             <span>Received</span>
@@ -195,11 +255,11 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
           {/* Signature Block */}
           <div className="pt-8 text-center sm:text-right">
             <p className="text-[11px] font-bold text-neutral-900">
-              For: PRESTON RETRO ENTERPRISE
+              For: {companyName}
             </p>
-            <div className="h-12" /> {/* Space for signature stamp */}
+            <div className="h-12" />
             <p className="text-xs font-bold text-neutral-900 border-t border-neutral-300 pt-1 inline-block min-w-[160px] text-center">
-              Authorized Signatory
+              {signatoryTitle}
             </p>
           </div>
         </div>

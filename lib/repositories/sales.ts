@@ -248,3 +248,132 @@ export async function updateSaleStatus(
   return updated;
 }
 
+
+
+export async function deleteSale(invoiceId: string): Promise<void> {
+  const [salesRows, itemsRows] = await Promise.all([
+    syncManager.getRows(SALES_TAB),
+    syncManager.getRows(SALE_ITEMS_TAB),
+  ]);
+  const sales = rowsToObjects(salesRows, mappers.rowToSale);
+  const target = sales.find(s => s.invoice_id === invoiceId);
+
+  if (!target) {
+    throw new Error(`Invoice with ID ${invoiceId} not found`);
+  }
+
+  const items = rowsToObjects(itemsRows, mappers.rowToSaleItem).filter(i => i.invoice_id === invoiceId);
+
+  // 1. Reverse stock for all line items
+  for (const item of items) {
+    try {
+      await updateProductStock(
+        item.product_id,
+        item.quantity,
+        'IN',
+        `Stock Reversal: Deleted Invoice #${target.invoice_number}`
+      );
+    } catch (err) {
+      console.warn(`Could not reverse stock for product ${item.product_id}:`, err);
+    }
+  }
+
+  // 2. Mark sale as inactive
+  const updatedSale: Sale = {
+    ...target,
+    is_active: false,
+    updated_at: new Date().toISOString(),
+  };
+  await syncManager.updateRow(SALES_TAB, (target as any)._rowIndex, mappers.saleToRow(updatedSale));
+}
+
+export async function updateSale(
+  invoiceId: string,
+  saleData: Partial<Sale>,
+  updatedItems?: Omit<SaleItem, 'item_id' | 'invoice_id' | 'created_at'>[]
+): Promise<Sale> {
+  const [salesRows, itemsRows] = await Promise.all([
+    syncManager.getRows(SALES_TAB),
+    syncManager.getRows(SALE_ITEMS_TAB),
+  ]);
+  const sales = rowsToObjects(salesRows, mappers.rowToSale);
+  const target = sales.find(s => s.invoice_id === invoiceId);
+
+  if (!target) {
+    throw new Error(`Invoice with ID ${invoiceId} not found`);
+  }
+
+  const now = new Date().toISOString();
+  const oldItems = rowsToObjects(itemsRows, mappers.rowToSaleItem).filter(i => i.invoice_id === invoiceId);
+
+  // If line items are provided, handle stock adjustments
+  if (updatedItems && updatedItems.length > 0) {
+    const oldQtyMap = new Map<string, number>();
+    oldItems.forEach(i => oldQtyMap.set(i.product_id, (oldQtyMap.get(i.product_id) || 0) + i.quantity));
+
+    const newQtyMap = new Map<string, number>();
+    updatedItems.forEach(i => newQtyMap.set(i.product_id, (newQtyMap.get(i.product_id) || 0) + i.quantity));
+
+    // Validate available stock for any net increases
+    for (const [prodId, newQty] of newQtyMap.entries()) {
+      const oldQty = oldQtyMap.get(prodId) || 0;
+      const diff = newQty - oldQty;
+      if (diff > 0) {
+        const product = await getProductById(prodId);
+        if (!product) throw new Error(`Product ${prodId} not found`);
+        if (product.stock < diff) {
+          throw new Error(`Insufficient stock for "${product.product_name}". Available: ${product.stock}, Needed: ${diff}`);
+        }
+      }
+    }
+
+    // Apply stock diffs
+    const allProdIds = new Set([...oldQtyMap.keys(), ...newQtyMap.keys()]);
+    for (const prodId of allProdIds) {
+      const oldQty = oldQtyMap.get(prodId) || 0;
+      const newQty = newQtyMap.get(prodId) || 0;
+      const diff = newQty - oldQty;
+      if (diff > 0) {
+        await updateProductStock(prodId, diff, 'OUT', `Invoice #${target.invoice_number} update: increased quantity`);
+      } else if (diff < 0) {
+        await updateProductStock(prodId, Math.abs(diff), 'IN', `Invoice #${target.invoice_number} update: decreased quantity`);
+      }
+    }
+
+    // Recalculate totals
+    const calculatedSubtotal = updatedItems.reduce((sum, item) => sum + (item.selling_price * item.quantity), 0);
+    const calculatedGst = saleData.gst !== undefined ? saleData.gst : target.gst;
+    const calculatedTotal = calculatedSubtotal + calculatedGst;
+
+    // Append new items
+    for (const item of updatedItems) {
+      const newItem: SaleItem = {
+        ...item,
+        item_id: `item_${crypto.randomUUID().slice(0, 8)}`,
+        invoice_id: invoiceId,
+        created_at: now,
+      };
+      await syncManager.appendRow(SALE_ITEMS_TAB, mappers.saleItemToRow(newItem));
+    }
+
+    const updated: Sale = {
+      ...target,
+      ...saleData,
+      subtotal: calculatedSubtotal,
+      gst: calculatedGst,
+      total: calculatedTotal,
+      updated_at: now,
+    };
+
+    await syncManager.updateRow(SALES_TAB, (target as any)._rowIndex, mappers.saleToRow(updated));
+    return updated;
+  } else {
+    const updated: Sale = {
+      ...target,
+      ...saleData,
+      updated_at: now,
+    };
+    await syncManager.updateRow(SALES_TAB, (target as any)._rowIndex, mappers.saleToRow(updated));
+    return updated;
+  }
+}

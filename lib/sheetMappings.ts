@@ -100,6 +100,9 @@ export const mappers = {
       is_active: isActive,
       created_at: row[8] || new Date().toISOString(),
       updated_at: row[9] || new Date().toISOString(),
+      contact_person: row[10] || '',
+      email: row[11] || '',
+      credit_days: Number(row[12]) || 15,
     };
   },
 
@@ -115,6 +118,9 @@ export const mappers = {
       customer.is_active ? 'TRUE' : 'FALSE',
       customer.created_at,
       customer.updated_at,
+      customer.contact_person || '',
+      customer.email || '',
+      customer.credit_days || 15,
     ];
   },
 
