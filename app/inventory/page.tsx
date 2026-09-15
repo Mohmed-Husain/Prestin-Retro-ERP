@@ -15,7 +15,8 @@ import {
   List, 
   Grid2X2,
   TrendingUp,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { Product, InventoryKPIs } from '@/lib/types';
 import { formatCurrency, calculateGrossMargin } from '@/lib/calculations';
@@ -40,6 +41,8 @@ export default function InventoryPage() {
   const [editModalProduct, setEditModalProduct] = useState<Product | null>(null);
   const [updateModalProduct, setUpdateModalProduct] = useState<Product | null>(null);
   const [historyModalProduct, setHistoryModalProduct] = useState<Product | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchInventory = async () => {
     try {
@@ -94,6 +97,29 @@ export default function InventoryPage() {
   }, [products, selectedCategory, statusFilter, sizeFilter, searchQuery]);
 
   // Handle product creation
+
+  const handleDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/products/${deletingProduct.product_id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to archive product');
+      }
+      toast.success(`Product "${deletingProduct.product_name}" archived successfully`);
+      setProducts(prev => prev.filter(p => p.product_id !== deletingProduct.product_id));
+      setDeletingProduct(null);
+      fetchInventory();
+    } catch (err: any) {
+      toast.error(err.message || 'Error archiving product');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const handleProductCreated = (newProd: Product) => {
     setProducts((prev) => [newProd, ...prev]);
     fetchInventory();
@@ -565,6 +591,14 @@ export default function InventoryPage() {
                     >
                       {actionLabel}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingProduct(product)}
+                      className="p-1.5 rounded-full bg-white border border-neutral-200 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 shadow-sm transition-all"
+                      title="Archive Product"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -635,6 +669,14 @@ export default function InventoryPage() {
                           >
                             Update
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingProduct(p)}
+                            className="p-1.5 rounded-full bg-white border border-neutral-200 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 shadow-sm transition-all"
+                            title="Archive Product"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -665,10 +707,44 @@ export default function InventoryPage() {
 
       <UpdateStockModal
         product={updateModalProduct}
+        products={products}
         isOpen={!!updateModalProduct}
         onClose={() => setUpdateModalProduct(null)}
         onStockUpdated={handleStockUpdated}
       />
+
+
+      {/* Delete Product Confirmation Modal */}
+      {deletingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[24px] max-w-sm w-full p-6 shadow-2xl border border-neutral-100 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-neutral-900">Archive Garment?</h3>
+            <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
+              Are you sure you want to archive <span className="font-semibold text-neutral-800">{deletingProduct.product_name}</span> ({deletingProduct.sku})? It will be safely archived from active warehouse stock.
+            </p>
+            <div className="flex items-center justify-center gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => setDeletingProduct(null)}
+                className="px-4 py-2 rounded-full border border-neutral-200 text-xs font-semibold text-neutral-600 hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleDeleteProduct}
+                className="px-4 py-2 rounded-full bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700 shadow-sm transition-all disabled:opacity-50"
+              >
+                {deleteLoading ? 'Archiving...' : 'Yes, Archive'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <StockHistoryModal
         product={historyModalProduct}
