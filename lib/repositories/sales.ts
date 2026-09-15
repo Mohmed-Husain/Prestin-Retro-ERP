@@ -127,16 +127,16 @@ export async function getSalesKPIs(): Promise<{
   const saleItemsRows = await syncManager.getRows(SALE_ITEMS_TAB);
   const items = rowsToObjects(saleItemsRows, mappers.rowToSaleItem);
 
-  const todayStr = '2025-05-26';
-  const monthStr = '2025-05';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const monthStr = todayStr.slice(0, 7);
 
   const todayBilled = sales
     .filter(s => s.date === todayStr)
     .reduce((sum, s) => sum + s.total, 0);
 
   const monthlyBilled = sales
-    .filter(s => s.date.startsWith(monthStr))
-    .reduce((sum, s) => sum + s.total, 0) || sales.reduce((sum, s) => sum + s.total, 0);
+    .filter(s => s.date?.startsWith(monthStr))
+    .reduce((sum, s) => sum + s.total, 0);
 
   const unpaidAmount = sales
     .filter(s => s.status === 'Unpaid')
@@ -145,10 +145,10 @@ export async function getSalesKPIs(): Promise<{
   const totalUnitsDispatched = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return {
-    todayBilled: todayBilled || 58105,
-    monthlyBilled: monthlyBilled || 348200,
-    unpaidAmount: unpaidAmount || 105055,
-    totalUnitsDispatched: totalUnitsDispatched || 485,
+    todayBilled,
+    monthlyBilled,
+    unpaidAmount,
+    totalUnitsDispatched,
     totalInvoices: sales.length,
   };
 }

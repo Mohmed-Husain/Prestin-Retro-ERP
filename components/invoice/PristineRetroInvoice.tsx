@@ -48,20 +48,12 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
         </div>
 
         {/* Vintage Seal Stamp Logo (Right) */}
-        <div className="w-20 h-20 rounded-full border-2 border-neutral-900 flex flex-col items-center justify-center text-center p-1 flex-shrink-0 relative">
-          <span className="text-[7px] font-bold uppercase tracking-wider text-neutral-800 leading-tight">
-            PRESTON RETRO ENTERPRISE
-          </span>
-          {/* Sewing Machine Icon Representation */}
-          <div className="my-0.5">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-neutral-900 stroke-[1.8]">
-              <path d="M4 19h16M4 15h12a3 3 0 003-3V7H7v4M7 7V5h6v2M16 11v4" />
-              <circle cx="16" cy="11" r="1.5" />
-            </svg>
-          </div>
-          <span className="text-[6px] font-bold italic text-neutral-600">
-            "Wear The Best, Feel The Best"
-          </span>
+        <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center p-0.5 border border-neutral-200 shadow-xs flex-shrink-0">
+          <img
+            src="/logo.jpg"
+            alt="Pristine Retro Enterprise Logo"
+            className="w-full h-full object-contain rounded-full"
+          />
         </div>
       </div>
 

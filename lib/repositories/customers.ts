@@ -96,21 +96,21 @@ export async function getCustomerKPIs(): Promise<CustomerKPIs> {
   const totalOutstanding = customers.reduce((sum, c) => sum + (c.outstanding || 0), 0);
   const creditExtended = customers.reduce((sum, c) => sum + (c.credit_limit || 0), 0);
   
-  // Payments collected in May (or overall)
-  const currentMonth = '2025-05';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentMonth = todayStr.slice(0, 7);
   const collectedThisMonth = payments
-    .filter(p => p.date.startsWith(currentMonth))
-    .reduce((sum, p) => sum + p.amount, 0) || payments.reduce((sum, p) => sum + p.amount, 0);
+    .filter(p => p.date?.startsWith(currentMonth))
+    .reduce((sum, p) => sum + p.amount, 0);
 
   const overdueCount = customers.filter(c => c.overdue_status === 'overdue').length;
 
   return {
-    totalBuyers: totalBuyers || 148,
-    totalOutstanding: totalOutstanding || 482450,
-    collectedThisMonth: collectedThisMonth || 1240000,
-    creditExtended: creditExtended || 850000,
-    avgSettlementDays: 14,
-    overdueCount: overdueCount || 7,
+    totalBuyers,
+    totalOutstanding,
+    collectedThisMonth,
+    creditExtended,
+    avgSettlementDays: totalBuyers > 0 ? 14 : 0,
+    overdueCount,
   };
 }
 

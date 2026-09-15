@@ -78,15 +78,15 @@ export async function getExpenseKPIs(): Promise<ExpenseKPIs> {
   ];
 
   return {
-    todayExpenses: todayExpenses || 12450,
-    todayChange: -18,
-    thisMonthExpenses: thisMonthExpenses || 56780,
-    thisMonthChange: 12,
-    monthlyAverage: 45200,
-    monthlyAverageChange: -8,
-    totalThisYear: 482300,
-    totalThisYearChange: -6,
-    trend,
-    breakdown: finalBreakdown,
+    todayExpenses,
+    todayChange: 0,
+    thisMonthExpenses,
+    thisMonthChange: 0,
+    monthlyAverage: totalExpenseAmount,
+    monthlyAverageChange: 0,
+    totalThisYear: totalExpenseAmount,
+    totalThisYearChange: 0,
+    trend: trend.length > 0 ? trend : [{ month: 'Current', amount: totalExpenseAmount }],
+    breakdown: breakdown,
   };
 }

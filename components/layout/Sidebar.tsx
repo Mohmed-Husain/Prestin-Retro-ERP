@@ -71,15 +71,12 @@ export default function Sidebar() {
       <div>
         {/* Brand Logo */}
         <Link href="/dashboard" className="flex items-center gap-3 px-2 mb-10 group">
-          <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 overflow-hidden flex-shrink-0">
-            {companyLogo ? (
-              <img src={companyLogo} alt={companyName} className="w-full h-full object-contain p-1" />
-            ) : (
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V9s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                <path d="M4 9c0 0 1-1 4-1s5 2 8 2 4-1 4-1" />
-              </svg>
-            )}
+          <div className="w-9 h-9 rounded-full border border-neutral-200 bg-white flex items-center justify-center shadow-xs transition-transform group-hover:scale-105 overflow-hidden flex-shrink-0">
+            <img
+              src="/logo.jpg"
+              alt={companyName}
+              className="w-full h-full object-contain rounded-full"
+            />
           </div>
           <div className="overflow-hidden">
             <span className="text-base font-bold tracking-tight text-neutral-900 block leading-tight truncate">

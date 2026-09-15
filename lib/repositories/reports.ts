@@ -17,8 +17,8 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
   // Current date context (simulated or live: May 2025 matches seed data)
   const now = new Date();
-  const currentMonthStr = '2025-05';
-  const todayStr = '2025-05-26';
+  const currentMonthStr = now.toISOString().slice(0, 7);
+  const todayStr = now.toISOString().split('T')[0];
 
   // 1. Today's sales
   const todaySales = sales
@@ -27,14 +27,13 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
   // 2. Monthly sales
   const thisMonthSales = sales
-    .filter(s => s.date.startsWith(currentMonthStr))
+    .filter(s => s.date?.startsWith(currentMonthStr))
     .reduce((sum, s) => sum + s.total, 0);
 
-  // Total sales overall if monthly is small
-  const effectiveMonthlySales = thisMonthSales > 0 ? thisMonthSales : sales.reduce((sum, s) => sum + s.total, 0);
+  const effectiveMonthlySales = thisMonthSales;
 
   // 3. COGS & Gross Profit
-  const cogs = saleItems.reduce((sum, item) => sum + item.cost_price * item.quantity, 0);
+  const cogs = saleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0);
   const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
   const grossProfit = Math.max(0, totalRevenue - cogs);
 
@@ -85,13 +84,9 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
     .sort((a, b) => b.units_sold - a.units_sold)
     .slice(0, 5);
 
-  // 9. Sales trend by month
+  // 9. Sales trend
   const salesTrend = [
-    { month: 'Jan', sales: 45000 },
-    { month: 'Feb', sales: 85000 },
-    { month: 'Mar', sales: 72000 },
-    { month: 'Apr', sales: 145000 },
-    { month: 'May', sales: effectiveMonthlySales || 348200 },
+    { month: 'Current', sales: effectiveMonthlySales },
   ];
 
   // 10. Recent Sales
@@ -101,16 +96,16 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
   }));
 
   return {
-    todaySales: todaySales || 24560,
-    todaySalesChange: 12,
-    monthlySales: effectiveMonthlySales || 348200,
-    monthlySalesChange: 8,
-    grossProfit: grossProfit || 124300,
-    grossProfitChange: 10,
-    netProfit: netProfit || 92450,
-    netProfitChange: 9,
-    totalExpenses: totalExpenses || 56780,
-    totalExpensesChange: -5,
+    todaySales,
+    todaySalesChange: 0,
+    monthlySales: effectiveMonthlySales,
+    monthlySalesChange: 0,
+    grossProfit,
+    grossProfitChange: 0,
+    netProfit,
+    netProfitChange: 0,
+    totalExpenses,
+    totalExpensesChange: 0,
     salesTrend,
     expenseBreakdown,
     lowStockItems,
@@ -134,13 +129,13 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
   const activeExpenses = expenses.filter(e => e.is_active);
 
   // Revenue = Sales Total
-  const totalSales = activeSales.reduce((sum, s) => sum + s.total, 0) || 348200;
+  const totalSales = activeSales.reduce((sum, s) => sum + s.total, 0);
 
   // Expenses = Expense Total
-  const totalExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0) || 56780;
+  const totalExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // COGS = SaleItems Cost
-  const cogs = saleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0) || 124300;
+  const cogs = saleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0);
 
   // Gross Profit = Revenue - COGS
   const grossProfit = Math.max(0, totalSales - cogs);
@@ -151,27 +146,27 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
   // Sales Trend (grouped by date)
   const salesByDate = new Map<string, number>();
   activeSales.forEach(s => {
-    const d = s.date || '2025-05-26';
-    salesByDate.set(d, (salesByDate.get(d) || 0) + s.total);
+    const d = s.date || '';
+    if (d) salesByDate.set(d, (salesByDate.get(d) || 0) + s.total);
   });
   const salesTrend = Array.from(salesByDate.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, sales]) => ({ date: date.slice(5), sales }));
+    .map(([date, sales]) => ({ date: date.slice(5) || date, sales }));
 
   // Expense Trend (grouped by date)
   const expenseByDate = new Map<string, number>();
   activeExpenses.forEach(e => {
-    const d = e.date || '2025-05-26';
-    expenseByDate.set(d, (expenseByDate.get(d) || 0) + e.amount);
+    const d = e.date || '';
+    if (d) expenseByDate.set(d, (expenseByDate.get(d) || 0) + e.amount);
   });
   const expenseTrend = Array.from(expenseByDate.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, amount]) => ({ date: date.slice(5), amount }));
+    .map(([date, amount]) => ({ date: date.slice(5) || date, amount }));
 
   // Combined Sales vs Expenses Trend
   const allDates = Array.from(new Set([...salesByDate.keys(), ...expenseByDate.keys()])).sort();
   const salesVsExpenses = allDates.map(date => ({
-    date: date.slice(5),
+    date: date.slice(5) || date,
     sales: salesByDate.get(date) || 0,
     expenses: expenseByDate.get(date) || 0,
   }));
@@ -201,19 +196,7 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
   }));
 
   const monthlyProfitTrend = [
-    { month: 'Jan', profit: 42000 },
-    { month: 'Feb', profit: 68000 },
-    { month: 'Mar', profit: 54000 },
-    { month: 'Apr', profit: 78000 },
-    { month: 'May', profit: netProfit },
-  ];
-
-  const topSellingProducts = [
-    { rank: 1, name: 'Cotton T-Shirt', units_sold: 120, revenue: 47880 },
-    { rank: 2, name: 'Denim Jacket', units_sold: 98, revenue: 68600 },
-    { rank: 3, name: 'Linen Shirt', units_sold: 76, revenue: 53200 },
-    { rank: 4, name: 'Track Pant', units_sold: 64, revenue: 31360 },
-    { rank: 5, name: 'Hoodie', units_sold: 52, revenue: 41080 },
+    { month: 'Current', profit: netProfit },
   ];
 
   return {
@@ -222,29 +205,16 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
     cogs,
     grossProfit,
     netProfit,
-    totalInvoices: activeSales.length || 186,
-    salesTrend: salesTrend.length > 0 ? salesTrend : [{ date: '05-20', sales: 42000 }, { date: '05-26', sales: 162400 }],
-    expenseTrend: expenseTrend.length > 0 ? expenseTrend : [{ date: '05-20', amount: 12500 }, { date: '05-26', amount: 28000 }],
-    salesVsExpenses: salesVsExpenses.length > 0 ? salesVsExpenses : [
-      { date: '1 May', sales: 42000, expenses: 18000 },
-      { date: '7 May', sales: 88000, expenses: 24000 },
-      { date: '14 May', sales: 75000, expenses: 22000 },
-      { date: '21 May', sales: 110000, expenses: 31000 },
-      { date: '28 May', sales: 162400, expenses: 42300 },
-    ],
+    totalInvoices: activeSales.length,
+    salesTrend,
+    expenseTrend,
+    salesVsExpenses,
     expenseBreakdown,
-    topSellingProducts,
-    salesByCategory: salesByCategory.length > 0 ? salesByCategory : [
-      { category: 'T-Shirts', percentage: 28 },
-      { category: 'Shirts', percentage: 20 },
-      { category: 'Hoodies', percentage: 16 },
-      { category: 'Jackets', percentage: 14 },
-      { category: 'Track Pants', percentage: 12 },
-      { category: 'Others', percentage: 10 },
-    ],
+    topSellingProducts: [],
+    salesByCategory,
     monthlyProfitTrend,
     bestMonth: {
-      month: 'May 2025',
+      month: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       netProfit,
     },
   };

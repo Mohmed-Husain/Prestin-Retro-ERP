@@ -24,8 +24,6 @@ import * as XLSX from "xlsx";
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [showClearModal, setShowClearModal] = useState(false);
 
   // Import states
   const [selectedModule, setSelectedModule] = useState<"products" | "customers" | "expenses" | "sales">("products");
@@ -114,27 +112,6 @@ export default function SettingsPage() {
 
   const handleClearCache = () => {
     toast.success("In-memory cache flushed. Next request reads fresh from Google Sheets.");
-  };
-
-  const handleClearMockData = async () => {
-    setClearing(true);
-    try {
-      const res = await fetch("/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "clear_all" }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to clear mock data");
-      }
-      toast.success("All mock data rows cleared from Google Sheets!");
-      setShowClearModal(false);
-    } catch (err: any) {
-      toast.error(err.message || "Error clearing mock data");
-    } finally {
-      setClearing(false);
-    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,22 +219,16 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-neutral-700 mb-1">Top-Left Logo Image URL (Optional)</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="url"
-                          placeholder="https://example.com/logo.png"
-                          value={settings.company_logo}
-                          onChange={(e) => setSettings({ ...settings, company_logo: e.target.value })}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-900/10"
-                        />
-                        {settings.company_logo && (
-                          <div className="w-9 h-9 rounded-xl bg-neutral-100 border border-neutral-200 p-1 flex-shrink-0 flex items-center justify-center">
-                            <img src={settings.company_logo} alt="Preview" className="w-full h-full object-contain" />
-                          </div>
-                        )}
+                      <label className="block font-semibold text-neutral-700 mb-1">Factory Brand Logo</label>
+                      <div className="flex items-center gap-3 p-2.5 rounded-xl border border-neutral-200 bg-neutral-50/80">
+                        <div className="w-10 h-10 rounded-full bg-white border border-neutral-200 p-0.5 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-xs">
+                          <img src="/logo.jpg" alt="Pristine Retro Logo" className="w-full h-full object-contain rounded-full" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-neutral-900 block">Pristine Retro Enterprise</span>
+                          <span className="text-[10px] text-emerald-600 font-medium">✓ Official Emblem Active across App & Invoices</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-neutral-400 mt-1 block">Replaces standard mark on top-left sidebar.</span>
                     </div>
                   </div>
 
@@ -512,24 +483,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Clear Mock Data Safety Action */}
-          <div className="floating-card p-6 space-y-3 border-rose-100">
-            <div className="flex items-center gap-2 pb-2 border-b border-rose-100 text-rose-600">
-              <Trash2 className="w-4 h-4" />
-              <h3 className="font-bold text-sm text-rose-900">Clear All Mock Data</h3>
-            </div>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              Wipes all demo transaction rows across Products, Sales, Customers, Payments, and Expenses while keeping all sheet headers and settings safe.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowClearModal(true)}
-              className="w-full py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors"
-            >
-              Clear All Mock Data Rows
-            </button>
-          </div>
-
           {/* Vercel Ready Card */}
           <div className="floating-card p-6 bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
             <h4 className="font-bold text-sm">Preston Retro Factory OS</h4>
@@ -539,41 +492,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-
-      {/* Confirmation Modal for Clearing Mock Data */}
-      {showClearModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-fade-in border border-neutral-200">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="p-2 rounded-full bg-rose-100">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-base text-neutral-900">Confirm Clearing Mock Data</h3>
-            </div>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              This action will delete all transaction data rows in Google Sheets from row 2 onwards across Products, Customers, Sales, and Expenses. Metadata settings will remain untouched.
-            </p>
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowClearModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={clearing}
-                onClick={handleClearMockData}
-                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors flex items-center gap-1.5"
-              >
-                {clearing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>{clearing ? "Clearing..." : "Yes, Clear Mock Data"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AppShell>
   );
 }

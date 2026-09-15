@@ -94,8 +94,12 @@ export default function AppLock({ children }: AppLockProps) {
             }`}
           >
             {/* Preston Retro Seal Icon */}
-            <div className="w-16 h-16 rounded-2xl bg-neutral-900 flex items-center justify-center text-white shadow-md mb-4">
-              <Lock className="w-7 h-7 text-white" />
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-neutral-900 shadow-md mb-4 flex items-center justify-center bg-black">
+              <img
+                src="/logo.jpg"
+                alt="Pristine Retro Logo"
+                className="w-full h-full object-contain rounded-full"
+              />
             </div>
 
             <h2 className="text-xl font-bold tracking-tight text-neutral-900">

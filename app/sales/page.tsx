@@ -116,6 +116,33 @@ export default function SalesPage() {
     }
   };
 
+  const handleMarkPaid = async (sale: Sale) => {
+    try {
+      // Record payment for this specific invoice
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: sale.customer_id,
+          amount: sale.total,
+          method: 'Bank Transfer',
+          reference: `INV-${sale.invoice_number}`,
+          date: new Date().toISOString().split('T')[0],
+          notes: `Settlement for Invoice #${sale.invoice_number}`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to record payment');
+      }
+
+      toast.success(`Invoice #${sale.invoice_number} settled & logged to Customer Khata!`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Error recording payment');
+    }
+  };
+
   const handleInvoiceCreated = (newSale: Sale) => {
     setSales(prev => [newSale, ...prev]);
     fetchData();
@@ -392,6 +419,15 @@ export default function SalesPage() {
                       </td>
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {isUnpaid && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkPaid(sale)}
+                              className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-700 shadow-sm transition-all whitespace-nowrap"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
                           {!isDispatched && (
                             <button
                               type="button"

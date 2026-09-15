@@ -28,5 +28,42 @@ export async function recordPayment(
 
   const row = mappers.paymentToRow(newPayment);
   await syncManager.appendRow(TAB_NAME, row);
+
+  // Auto-settle oldest unpaid sales for this customer
+  try {
+    const salesRows = await syncManager.getRows('Sales');
+    const salesWithIndex = rowsToObjects(salesRows, mappers.rowToSale);
+    const customerSales = salesWithIndex
+      .filter(s => s.customer_id === data.customer_id && s.is_active && s.status !== 'Draft')
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    // Total cumulative payments for this customer
+    const allPayments = await getAllPayments(data.customer_id);
+    let remainingPaidBalance = allPayments.reduce((sum, p) => sum + p.amount, 0);
+
+    for (const sale of customerSales) {
+      if (remainingPaidBalance >= sale.total) {
+        if (sale.status !== 'Paid') {
+          const updatedSale = { ...sale, status: 'Paid' as const, updated_at: now };
+          await syncManager.updateRow('Sales', (sale as any)._rowIndex, mappers.saleToRow(updatedSale));
+        }
+        remainingPaidBalance -= sale.total;
+      } else if (remainingPaidBalance > 0) {
+        if (sale.status !== 'Partial') {
+          const updatedSale = { ...sale, status: 'Partial' as const, updated_at: now };
+          await syncManager.updateRow('Sales', (sale as any)._rowIndex, mappers.saleToRow(updatedSale));
+        }
+        remainingPaidBalance = 0;
+      } else {
+        if (sale.status !== 'Unpaid' && sale.status !== 'Dispatched') {
+          const updatedSale = { ...sale, status: 'Unpaid' as const, updated_at: now };
+          await syncManager.updateRow('Sales', (sale as any)._rowIndex, mappers.saleToRow(updatedSale));
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to auto-reconcile invoices during payment:', err);
+  }
+
   return newPayment;
 }
