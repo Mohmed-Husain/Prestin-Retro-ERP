@@ -224,6 +224,7 @@ export const mappers = {
       is_active: isActive,
       created_at: row[8] || new Date().toISOString(),
       updated_at: row[9] || new Date().toISOString(),
+      type: (row[10] as any) === 'INCOMING' ? 'INCOMING' : 'OUTGOING',
     };
   },
 
@@ -239,6 +240,7 @@ export const mappers = {
       expense.is_active ? 'TRUE' : 'FALSE',
       expense.created_at,
       expense.updated_at,
+      expense.type || 'OUTGOING',
     ];
   },
 

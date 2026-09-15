@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, category, amount, payment_method, date, notes } = body;
+    const { title, category, amount, payment_method, date, notes, type } = body;
 
     if (!title || !amount) {
       return NextResponse.json(
@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       payment_method: payment_method || 'Cash',
       date: date || new Date().toISOString().split('T')[0],
       notes: notes || '',
+      type: type === 'INCOMING' ? 'INCOMING' : 'OUTGOING',
     });
 
     return NextResponse.json({ success: true, expense }, { status: 201 });

@@ -44,13 +44,22 @@ export default function ExpensesPage() {
 
   // Add expense form state
   const [formLoading, setFormLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    category: string;
+    amount: string;
+    date: string;
+    payment_method: string;
+    notes: string;
+    type: 'OUTGOING' | 'INCOMING';
+  }>({
     title: '',
     category: 'Fabric',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     payment_method: 'Bank Transfer',
     notes: '',
+    type: 'OUTGOING',
   });
 
   const fetchExpenses = async () => {
@@ -129,11 +138,12 @@ export default function ExpensesPage() {
       // Reset form
       setFormData({
         title: '',
-        category: 'Fabric',
+        category: categories[0]?.name || 'Fabric',
         amount: '',
         date: new Date().toISOString().split('T')[0],
         payment_method: 'Bank Transfer',
         notes: '',
+        type: 'OUTGOING',
       });
       fetchExpenses();
     } catch (err: any) {
@@ -209,8 +219,9 @@ export default function ExpensesPage() {
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
             {kpis ? formatCurrency(kpis.todayExpenses) : '₹ 12,450'}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↓ 18% vs yesterday</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-emerald-600 font-semibold">
+            <TrendingDown className="w-3.5 h-3.5" />
+            <span>-8.2% vs yesterday</span>
           </div>
         </div>
 
@@ -225,8 +236,9 @@ export default function ExpensesPage() {
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
             {kpis ? formatCurrency(kpis.thisMonthExpenses) : '₹ 56,780'}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-rose-500 font-medium mt-1">
-            <span>↑ 12% vs last month</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-rose-500 font-semibold">
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>+12% vs last month</span>
           </div>
         </div>
 
@@ -235,14 +247,15 @@ export default function ExpensesPage() {
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-xs font-medium text-neutral-500">Monthly Average</span>
             <div className="p-1 rounded-lg bg-neutral-100 text-neutral-600">
-              <PieIcon className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5" />
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
             {kpis ? formatCurrency(kpis.monthlyAverage) : '₹ 45,200'}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↓ 8% vs previous 3 months</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-emerald-600 font-semibold">
+            <TrendingDown className="w-3.5 h-3.5" />
+            <span>-8% vs past quarter</span>
           </div>
         </div>
 
@@ -251,103 +264,102 @@ export default function ExpensesPage() {
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-xs font-medium text-neutral-500">Total This Year</span>
             <div className="p-1 rounded-lg bg-neutral-100 text-neutral-600">
-              <FileText className="w-3.5 h-3.5" />
+              <PieIcon className="w-3.5 h-3.5" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-neutral-900 tracking-tight">
+          <div className="text-2xl font-bold text-neutral-900 tracking-tight truncate">
             {kpis ? formatCurrency(kpis.totalThisYear) : '₹ 4,82,300'}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↓ 6% vs last year</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-neutral-400">
+            <span>Fiscal Year 2025-26</span>
           </div>
         </div>
       </div>
 
-      {/* Middle Row: Trend Chart, Donut Breakdown, Quick Add Expense Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-7 items-start">
-        {/* Expense Trend Chart (4 cols) */}
-        <div className="lg:col-span-4 floating-card p-5 h-full flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-neutral-100 text-neutral-700">
-                <TrendingUp className="w-3.5 h-3.5" />
+      {/* Main 2-Column Content: Charts & Quick Add */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-7">
+        {/* Left 2 Cols: Charts */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Trend Bar Chart */}
+          <div className="floating-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-sm text-neutral-900">Expense Trend (Last 7 Days)</h3>
+                <p className="text-xs text-neutral-400">Daily spending overview</p>
               </div>
-              <h3 className="font-bold text-sm text-neutral-900">Expense Trend</h3>
             </div>
-            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
-              <span>This Month</span>
-              <ChevronDown className="w-3 h-3 text-neutral-400" />
-            </div>
+            <ExpenseTrendChart data={kpis?.trend || []} />
           </div>
 
-          <div className="my-auto">
-            {kpis?.trend ? (
-              <ExpenseTrendChart data={kpis.trend} />
-            ) : (
-              <div className="h-56 flex items-center justify-center text-neutral-400 text-xs">
-                Loading trend...
+          {/* Breakdown Donut */}
+          <div className="floating-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-sm text-neutral-900">Category Breakdown</h3>
+                <p className="text-xs text-neutral-400">Distribution across major operational cost centers</p>
               </div>
-            )}
-          </div>
-
-          <div className="text-right pt-2 border-t border-neutral-100">
-            <span className="text-xs text-neutral-400">May Peak: </span>
-            <span className="text-xs font-bold text-neutral-900">
-              {formatCurrency(kpis?.thisMonthExpenses || 56780)}
-            </span>
+            </div>
+            <ExpenseBreakdownDonut
+              data={kpis?.breakdown || []}
+              totalAmount={kpis?.thisMonthExpenses || 56780}
+            />
           </div>
         </div>
 
-        {/* Expense Breakdown Donut (4 cols) */}
-        <div className="lg:col-span-4 floating-card p-5 h-full flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-neutral-100 text-neutral-700">
-                <PieIcon className="w-3.5 h-3.5" />
-              </div>
-              <h3 className="font-bold text-sm text-neutral-900">Expense Breakdown</h3>
+        {/* Right Col: Quick Add Expense Form */}
+        <div id="quick-expense-form" className="floating-card p-6 h-fit scroll-mt-24">
+          <div className="flex items-center gap-2 pb-4 mb-4 border-b border-neutral-100">
+            <div className="p-1.5 rounded-lg bg-neutral-900 text-white">
+              <Plus className="w-4 h-4 stroke-[2.5]" />
             </div>
-            <div className="text-xs text-neutral-400 font-medium">This Month</div>
+            <div>
+              <h3 className="font-bold text-sm text-neutral-900">Quick Add Entry</h3>
+              <p className="text-[11px] text-neutral-400">Syncs directly with Google Sheets</p>
+            </div>
           </div>
 
-          <div className="py-2">
-            {kpis?.breakdown ? (
-              <ExpenseBreakdownDonut
-                data={kpis.breakdown}
-                totalAmount={kpis.thisMonthExpenses || 56780}
-              />
-            ) : (
-              <div className="h-56 flex items-center justify-center text-neutral-400 text-xs">
-                Loading breakdown...
-              </div>
-            )}
-          </div>
-
-          <div className="text-center text-[11px] text-neutral-400 pt-2 border-t border-neutral-100">
-            Raw material & factory operating overhead
-          </div>
-        </div>
-
-        {/* Quick Add Expense Form (4 cols) */}
-        <div id="quick-expense-form" className="lg:col-span-4 floating-card p-5">
-          <div className="flex items-center gap-2 pb-3 mb-3 border-b border-neutral-100">
-            <Plus className="w-4 h-4 text-neutral-900" />
-            <h3 className="font-bold text-sm text-neutral-900">Add Expense</h3>
-          </div>
-
-          <form onSubmit={handleSaveExpense} className="space-y-3 text-xs">
+          <form onSubmit={handleSaveExpense} className="space-y-3.5 text-xs">
             <div>
               <label className="block font-semibold text-neutral-700 mb-1">
-                Title / Description *
+                Expense Title *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Cotton Fabric Purchase"
+                placeholder="e.g. Cotton Spool Bulk Purchase"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 text-xs"
               />
+            </div>
+
+            {/* Type selector: Outgoing vs Incoming */}
+            <div>
+              <label className="block font-semibold text-neutral-700 mb-1">Transaction Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'OUTGOING' })}
+                  className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+                    formData.type === 'OUTGOING'
+                      ? 'bg-rose-50 border-2 border-rose-500 text-rose-700 shadow-sm font-bold'
+                      : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  }`}
+                >
+                  Outgoing (Expense)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'INCOMING' })}
+                  className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+                    formData.type === 'INCOMING'
+                      ? 'bg-emerald-50 border-2 border-emerald-500 text-emerald-700 shadow-sm font-bold'
+                      : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  }`}
+                >
+                  Incoming (Income / Refund)
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -428,7 +440,7 @@ export default function ExpensesPage() {
                   Saving to Sheets...
                 </>
               ) : (
-                'Save Expense'
+                'Save Entry'
               )}
             </button>
           </form>
@@ -442,7 +454,7 @@ export default function ExpensesPage() {
             <div className="p-1.5 rounded-lg bg-neutral-100 text-neutral-700">
               <Receipt className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-base text-neutral-900">All Expenses</h3>
+            <h3 className="font-bold text-base text-neutral-900">All Transactions</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -451,7 +463,7 @@ export default function ExpensesPage() {
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search expenses..."
+                placeholder="Search entries..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 pr-3 py-1.5 rounded-full border border-neutral-200 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-900/10 w-44"
@@ -481,7 +493,7 @@ export default function ExpensesPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 text-neutral-400 gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-xs">Fetching expenses from Google Sheets...</span>
+              <span className="text-xs">Fetching entries from Google Sheets...</span>
             </div>
           ) : filteredExpenses.length === 0 ? (
             <div className="text-center py-12 text-neutral-400 text-xs">
@@ -492,6 +504,7 @@ export default function ExpensesPage() {
               <thead className="text-[10px] uppercase font-semibold text-neutral-400 border-b border-neutral-100 tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Date</th>
+                  <th className="py-3.5 px-4">Type</th>
                   <th className="py-3.5 px-4">Description</th>
                   <th className="py-3.5 px-4">Category</th>
                   <th className="py-3.5 px-4 text-right">Amount</th>
@@ -500,45 +513,59 @@ export default function ExpensesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {filteredExpenses.map((exp) => (
-                  <tr key={exp.expense_id} className="hover:bg-neutral-50/60 transition-colors">
-                    <td className="py-3.5 px-4 text-neutral-500 whitespace-nowrap">
-                      {exp.date}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 rounded-lg bg-neutral-100 flex-shrink-0">
-                          {getCategoryIcon(exp.category)}
+                {filteredExpenses.map((exp) => {
+                  const isIncoming = exp.type === 'INCOMING';
+                  return (
+                    <tr key={exp.expense_id} className="hover:bg-neutral-50/60 transition-colors">
+                      <td className="py-3.5 px-4 text-neutral-500 whitespace-nowrap">
+                        {exp.date}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          isIncoming 
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}>
+                          {isIncoming ? 'Incoming' : 'Outgoing'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 rounded-lg bg-neutral-100 flex-shrink-0">
+                            {getCategoryIcon(exp.category)}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-neutral-900">{exp.title}</div>
+                            {exp.notes && (
+                              <div className="text-[11px] text-neutral-400">{exp.notes}</div>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-semibold text-neutral-900">{exp.title}</div>
-                          {exp.notes && (
-                            <div className="text-[11px] text-neutral-400">{exp.notes}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 border border-neutral-200/50">
-                        {exp.category}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-neutral-900">
-                      {formatCurrency(exp.amount)}
-                    </td>
-                    <td className="py-3.5 px-4 text-neutral-600 font-medium">
-                      {exp.payment_method}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        type="button"
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 border border-neutral-200/50">
+                          {exp.category}
+                        </span>
+                      </td>
+                      <td className={`py-3.5 px-4 text-right font-bold whitespace-nowrap ${
+                        isIncoming ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {isIncoming ? `+ ${formatCurrency(exp.amount)}` : `- ${formatCurrency(exp.amount)}`}
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-600 font-medium">
+                        {exp.payment_method}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          type="button"
+                          className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

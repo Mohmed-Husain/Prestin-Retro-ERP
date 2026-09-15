@@ -1,4 +1,4 @@
-import { readSheetRows, appendSheetRow, updateSheetRow, batchUpdateSheetValues } from './googleSheets';
+import { readSheetRows, appendSheetRow, updateSheetRow, batchUpdateSheetValues, clearSheetData, overwriteSheetRows } from './googleSheets';
 
 interface CacheEntry {
   data: string[][];
@@ -62,6 +62,22 @@ export const syncManager = {
   async batchUpdate(data: { range: string; values: (string | number | boolean)[][] }[], affectedTabs: string[]): Promise<void> {
     await syncManager.retry(() => batchUpdateSheetValues(data));
     affectedTabs.forEach(tab => syncManager.invalidateCache(tab));
+  },
+
+  /**
+   * Clears all rows from row 2 onwards in a sheet tab and invalidates cache.
+   */
+  async clearTab(tabName: string): Promise<void> {
+    await syncManager.retry(() => clearSheetData(tabName));
+    syncManager.invalidateCache(tabName);
+  },
+
+  /**
+   * Overwrites all rows from row 2 onwards in a sheet tab and invalidates cache.
+   */
+  async overwriteTab(tabName: string, rows: (string | number | boolean)[][]): Promise<void> {
+    await syncManager.retry(() => overwriteSheetRows(tabName, rows));
+    syncManager.invalidateCache(tabName);
   },
 
   /**

@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google } from "googleapis";
 
 function getCredentials() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
@@ -6,10 +6,9 @@ function getCredentials() {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
 
   if (!clientEmail || !privateKey || !spreadsheetId) {
-    throw new Error('Missing Google Sheets configuration in environment variables');
+    throw new Error("Missing Google Sheets configuration in environment variables");
   }
 
-  // Handle newlines in private key if escaped
   if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
     privateKey = privateKey.slice(1, -1);
   }
@@ -24,17 +23,13 @@ export async function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: clientEmail,
     key: privateKey,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
-  const sheets = google.sheets({ version: 'v4', auth });
+  const sheets = google.sheets({ version: "v4", auth });
   return { sheets, spreadsheetId };
 }
 
-/**
- * Reads all rows from a given sheet tab.
- * Returns 2D array of strings.
- */
 export async function readSheetRows(tabName: string): Promise<string[][]> {
   const { sheets, spreadsheetId } = await getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
@@ -44,24 +39,18 @@ export async function readSheetRows(tabName: string): Promise<string[][]> {
   return (res.data.values as string[][]) || [];
 }
 
-/**
- * Appends a row to a sheet tab.
- */
 export async function appendSheetRow(tabName: string, rowValues: (string | number | boolean)[]): Promise<void> {
   const { sheets, spreadsheetId } = await getSheetsClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: `${tabName}!A1`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [rowValues.map(v => String(v))],
     },
   });
 }
 
-/**
- * Updates a specific row (1-indexed row number) in a sheet tab.
- */
 export async function updateSheetRow(
   tabName: string,
   rowIndex1Indexed: number,
@@ -71,16 +60,13 @@ export async function updateSheetRow(
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `${tabName}!A${rowIndex1Indexed}:Z${rowIndex1Indexed}`,
-    valueInputOption: 'USER_ENTERED',
+    valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [rowValues.map(v => String(v))],
     },
   });
 }
 
-/**
- * Batch update multiple ranges
- */
 export async function batchUpdateSheetValues(
   data: { range: string; values: (string | number | boolean)[][] }[]
 ): Promise<void> {
@@ -88,11 +74,37 @@ export async function batchUpdateSheetValues(
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId,
     requestBody: {
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: "USER_ENTERED",
       data: data.map(d => ({
         range: d.range,
         values: d.values.map(r => r.map(v => String(v))),
       })),
     },
   });
+}
+
+export async function clearSheetData(tabName: string): Promise<void> {
+  const { sheets, spreadsheetId } = await getSheetsClient();
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${tabName}!A2:Z`,
+  });
+}
+
+export async function overwriteSheetRows(tabName: string, rows: (string | number | boolean)[][]): Promise<void> {
+  const { sheets, spreadsheetId } = await getSheetsClient();
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${tabName}!A2:Z`,
+  });
+  if (rows.length > 0) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${tabName}!A2`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: rows.map(r => r.map(v => String(v))),
+      },
+    });
+  }
 }

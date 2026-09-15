@@ -8,7 +8,10 @@ export async function getFactorySettings(): Promise<Record<string, string>> {
   const rows = await syncManager.getRows(TAB_NAME);
   const meta = rowsToObjects(rows, mappers.rowToMetadata);
   const settings: Record<string, string> = {
-    company_name: 'PRISTINE RETRO ENTERPRISE',
+    company_name: 'PRESTON RETRO',
+    company_logo: '',
+    user_name: 'Aman Raj',
+    app_pin: '1234',
     gst_number: '24ABIFP5127C1ZJ',
     factory_address: 'Hussain tekri, Palanpur highway, Kanodar, Gujarat',
     phone_number: '8758206574',

@@ -149,6 +149,7 @@ export interface Expense {
   payment_method: string;
   date: string;
   notes: string;
+  type?: 'OUTGOING' | 'INCOMING';
   is_active: boolean;
   created_at: string;
   updated_at: string;

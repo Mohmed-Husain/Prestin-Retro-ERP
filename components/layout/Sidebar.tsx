@@ -24,21 +24,66 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [companyName, setCompanyName] = React.useState('Preston Retro');
+  const [companyLogo, setCompanyLogo] = React.useState('');
+  const [userName, setUserName] = React.useState('Aman Raj');
+
+  React.useEffect(() => {
+    // Load from localStorage if present for immediate display
+    const savedName = localStorage.getItem('preston_company_name');
+    const savedLogo = localStorage.getItem('preston_company_logo');
+    const savedUser = localStorage.getItem('preston_user_name');
+    if (savedName) setCompanyName(savedName);
+    if (savedLogo) setCompanyLogo(savedLogo);
+    if (savedUser) setUserName(savedUser);
+
+    // Fetch from settings API
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.settings) {
+          if (data.settings.company_name) {
+            setCompanyName(data.settings.company_name);
+            localStorage.setItem('preston_company_name', data.settings.company_name);
+          }
+          if (data.settings.company_logo !== undefined) {
+            setCompanyLogo(data.settings.company_logo);
+            localStorage.setItem('preston_company_logo', data.settings.company_logo);
+          }
+          if (data.settings.user_name) {
+            setUserName(data.settings.user_name);
+            localStorage.setItem('preston_user_name', data.settings.user_name);
+          }
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const userInitials = (userName || 'PR')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('');
 
   return (
     <aside className="w-64 flex-shrink-0 flex flex-col justify-between p-6 bg-transparent h-screen sticky top-0">
       <div>
         {/* Brand Logo */}
         <Link href="/dashboard" className="flex items-center gap-3 px-2 mb-10 group">
-          <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V9s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-              <path d="M4 9c0 0 1-1 4-1s5 2 8 2 4-1 4-1" />
-            </svg>
+          <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105 overflow-hidden flex-shrink-0">
+            {companyLogo ? (
+              <img src={companyLogo} alt={companyName} className="w-full h-full object-contain p-1" />
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-[2.2] stroke-linecap-round stroke-linejoin-round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V9s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                <path d="M4 9c0 0 1-1 4-1s5 2 8 2 4-1 4-1" />
+              </svg>
+            )}
           </div>
-          <div>
-            <span className="text-base font-bold tracking-tight text-neutral-900 block leading-tight">
-              Preston Retro
+          <div className="overflow-hidden">
+            <span className="text-base font-bold tracking-tight text-neutral-900 block leading-tight truncate">
+              {companyName}
             </span>
             <span className="text-[10px] font-medium tracking-wider text-neutral-400 uppercase">
               FACTORY OS
@@ -84,12 +129,12 @@ export default function Sidebar() {
 
         {/* User Card */}
         <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/70 border border-neutral-200/40 backdrop-blur-sm">
-          <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center font-semibold text-xs text-neutral-700">
-            AR
+          <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center font-semibold text-xs text-neutral-700 flex-shrink-0">
+            {userInitials || 'PR'}
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-neutral-900 leading-tight">Aman Raj</span>
-            <span className="text-[11px] text-neutral-400">Owner</span>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-xs font-semibold text-neutral-900 leading-tight truncate">{userName}</span>
+            <span className="text-[11px] text-neutral-400">User / Admin</span>
           </div>
         </div>
       </div>

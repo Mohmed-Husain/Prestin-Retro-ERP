@@ -13,6 +13,7 @@ export default function AppLock({ children }: AppLockProps) {
   const [isUnlocked, setIsUnlocked] = useState<boolean | null>(null);
   const [pin, setPin] = useState<string>('');
   const [errorShake, setErrorShake] = useState(false);
+  const [expectedPin, setExpectedPin] = useState<string>('1234');
 
   useEffect(() => {
     // Check sessionStorage (resets on browser refresh as requested)
@@ -22,6 +23,23 @@ export default function AppLock({ children }: AppLockProps) {
     } else {
       setIsUnlocked(false);
     }
+
+    // Load expected PIN from localStorage first for instant access
+    const savedPin = localStorage.getItem('preston_app_pin');
+    if (savedPin) {
+      setExpectedPin(savedPin);
+    }
+
+    // Fetch latest PIN and company profile from settings in background
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.settings?.app_pin) {
+          setExpectedPin(data.settings.app_pin);
+          localStorage.setItem('preston_app_pin', data.settings.app_pin);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const handleDigitPress = (digit: string) => {
@@ -39,7 +57,7 @@ export default function AppLock({ children }: AppLockProps) {
   };
 
   const verifyPin = (inputPin: string) => {
-    if (inputPin === CORRECT_PIN) {
+    if (inputPin === expectedPin) {
       sessionStorage.setItem('preston_retro_unlocked', 'true');
       setIsUnlocked(true);
     } else {
