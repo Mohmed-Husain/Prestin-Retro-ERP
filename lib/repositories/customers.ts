@@ -24,7 +24,8 @@ export async function getAllCustomers(includeInactive = false): Promise<Customer
 
     const totalBilled = customerSales.reduce((sum, s) => sum + s.total, 0);
     const totalPaid = customerPayments.reduce((sum, p) => sum + p.amount, 0);
-    const outstanding = Math.max(0, totalBilled - totalPaid);
+    // Allow negative outstanding to represent advance credit / overpayment
+    const outstanding = totalBilled - totalPaid;
 
     // Overdue status logic: if customer has outstanding and has an unpaid sale > 15 days
     let overdueStatus: 'healthy' | 'due_soon' | 'overdue' = 'healthy';
@@ -93,7 +94,10 @@ export async function getCustomerKPIs(): Promise<CustomerKPIs> {
   const payments = await getAllPayments();
 
   const totalBuyers = customers.length;
-  const totalOutstanding = customers.reduce((sum, c) => sum + (c.outstanding || 0), 0);
+  // Total receivables: sum outstanding only from buyers who owe money
+  const totalOutstanding = customers
+    .filter(c => (c.outstanding || 0) > 0)
+    .reduce((sum, c) => sum + (c.outstanding || 0), 0);
   const creditExtended = customers.reduce((sum, c) => sum + (c.credit_limit || 0), 0);
   
   const todayStr = new Date().toISOString().split('T')[0];

@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -24,8 +23,8 @@ jobs:
       - name: Pull Vercel Environment
         run: vercel pull --yes --environment=production --scope=m-husain --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build Project
+      - name: Build
         run: vercel build --prod --scope=m-husain --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Deploy to Production
+      - name: Deploy
         run: vercel deploy --prebuilt --prod --scope=m-husain --token=${{ secrets.VERCEL_TOKEN }}

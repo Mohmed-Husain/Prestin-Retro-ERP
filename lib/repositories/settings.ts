@@ -22,7 +22,12 @@ export async function getFactorySettings(): Promise<Record<string, string>> {
 
   meta.forEach(item => {
     if (item.key) {
-      settings[item.key] = item.value;
+      if (item.key === 'app_pin') {
+        // Ensure 4 digits, preserving leading zeroes if Google Sheets treated 0000 as 0
+        settings[item.key] = String(item.value ?? '').padStart(4, '0');
+      } else {
+        settings[item.key] = String(item.value ?? '');
+      }
     }
   });
 
@@ -34,9 +39,12 @@ export async function updateFactorySetting(key: string, value: string): Promise<
   const meta = rowsToObjects(rows, mappers.rowToMetadata);
   const target = meta.find(m => m.key === key);
 
+  // In Google Sheets USER_ENTERED, prefix with ' so strings with leading zeros like '0000' stay text
+  const formattedValue = key === 'app_pin' ? `'${value}` : value;
+
   if (target) {
-    await syncManager.updateRow(TAB_NAME, (target as any)._rowIndex, [key, value]);
+    await syncManager.updateRow(TAB_NAME, (target as any)._rowIndex, [key, formattedValue]);
   } else {
-    await syncManager.appendRow(TAB_NAME, [key, value]);
+    await syncManager.appendRow(TAB_NAME, [key, formattedValue]);
   }
 }

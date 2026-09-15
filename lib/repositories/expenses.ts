@@ -34,59 +34,66 @@ export async function createExpense(
 export async function getExpenseKPIs(): Promise<ExpenseKPIs> {
   const expenses = await getAllExpenses();
 
-  const todayStr = '2025-05-26';
-  const monthStr = '2025-05';
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const monthStr = now.toISOString().slice(0, 7);
 
-  const todayExpenses = expenses
+  const activeExpenses = expenses.filter(e => e.is_active);
+
+  const todayExpenses = activeExpenses
     .filter(e => e.date === todayStr)
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const thisMonthExpenses = expenses
-    .filter(e => e.date.startsWith(monthStr))
-    .reduce((sum, e) => sum + e.amount, 0) || expenses.reduce((sum, e) => sum + e.amount, 0);
+  const thisMonthExpenses = activeExpenses
+    .filter(e => e.date?.startsWith(monthStr))
+    .reduce((sum, e) => sum + e.amount, 0);
 
   // Group by category for donut breakdown
   const catMap = new Map<string, number>();
-  expenses.forEach(e => {
+  activeExpenses.forEach(e => {
     catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount);
   });
 
-  const totalExpenseAmount = expenses.reduce((sum, e) => sum + e.amount, 0) || 56780;
+  const totalExpenseAmount = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   const breakdown = Array.from(catMap.entries()).map(([name, amount]) => ({
     name,
     amount,
-    percentage: Math.round((amount / totalExpenseAmount) * 100),
+    percentage: totalExpenseAmount > 0 ? Math.round((amount / totalExpenseAmount) * 100) : 0,
   }));
 
-  // Standard category breakdown fallback if small count
-  const finalBreakdown = breakdown.length >= 4 ? breakdown : [
-    { name: 'Fabric', amount: 18170, percentage: 32 },
-    { name: 'Electricity', amount: 10220, percentage: 18 },
-    { name: 'Salary', amount: 9085, percentage: 16 },
-    { name: 'Transport', amount: 6813, percentage: 12 },
-    { name: 'Packaging', amount: 5678, percentage: 10 },
-    { name: 'Others', amount: 6814, percentage: 12 },
-  ];
+  // Group expenses by YYYY-MM for real dynamic trend
+  const monthTrendMap = new Map<string, number>();
+  activeExpenses.forEach(e => {
+    if (e.date) {
+      const m = e.date.slice(0, 7);
+      monthTrendMap.set(m, (monthTrendMap.get(m) || 0) + e.amount);
+    }
+  });
 
-  const trend = [
-    { month: 'Jan', amount: 18000 },
-    { month: 'Feb', amount: 28000 },
-    { month: 'Mar', amount: 22000 },
-    { month: 'Apr', amount: 35000 },
-    { month: 'May', amount: thisMonthExpenses || 56780 },
-  ];
+  const sortedMonths = Array.from(monthTrendMap.keys()).sort();
+  const trend = sortedMonths.length > 0
+    ? sortedMonths.map(m => {
+        const [year, month] = m.split('-');
+        const dateObj = new Date(Number(year), Number(month) - 1, 1);
+        const monthLabel = dateObj.toLocaleDateString('en-US', { month: 'short' });
+        return { month: monthLabel, amount: monthTrendMap.get(m) || 0 };
+      })
+    : [{ month: now.toLocaleDateString('en-US', { month: 'short' }), amount: thisMonthExpenses }];
+
+  const uniqueMonthsCount = Math.max(1, new Set(activeExpenses.map(e => e.date?.slice(0, 7)).filter(Boolean)).size);
+  const monthlyAverage = totalExpenseAmount > 0 ? Math.round(totalExpenseAmount / uniqueMonthsCount) : 0;
 
   return {
     todayExpenses,
     todayChange: 0,
     thisMonthExpenses,
     thisMonthChange: 0,
-    monthlyAverage: totalExpenseAmount,
+    monthlyAverage,
     monthlyAverageChange: 0,
     totalThisYear: totalExpenseAmount,
     totalThisYearChange: 0,
-    trend: trend.length > 0 ? trend : [{ month: 'Current', amount: totalExpenseAmount }],
-    breakdown: breakdown,
+    trend,
+    breakdown,
   };
 }

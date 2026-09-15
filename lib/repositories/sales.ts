@@ -9,37 +9,90 @@ const SALE_ITEMS_TAB = 'SaleItems';
 const METADATA_TAB = 'Metadata';
 
 export async function getAllSales(includeInactive = false): Promise<Sale[]> {
-  const [salesRows, itemsRows, customersRows] = await Promise.all([
+  const [salesRows, itemsRows, customersRows, paymentsRows] = await Promise.all([
     syncManager.getRows(SALES_TAB),
     syncManager.getRows(SALE_ITEMS_TAB),
     syncManager.getRows('Customers'),
+    syncManager.getRows('Payments'),
   ]);
 
   const sales = rowsToObjects(salesRows, mappers.rowToSale);
   const items = rowsToObjects(itemsRows, mappers.rowToSaleItem);
   const customers = rowsToObjects(customersRows, mappers.rowToCustomer);
+  const payments = rowsToObjects(paymentsRows, mappers.rowToPayment);
 
   const activeSales = includeInactive ? sales : sales.filter(s => s.is_active);
+
+  // Group payments by customer
+  const paymentsByCustomer = new Map<string, number>();
+  payments.forEach(p => {
+    paymentsByCustomer.set(p.customer_id, (paymentsByCustomer.get(p.customer_id) || 0) + p.amount);
+  });
+
+  // Calculate amount_paid per sale via FIFO
+  const salesByCustomer = new Map<string, Sale[]>();
+  activeSales.forEach(s => {
+    const list = salesByCustomer.get(s.customer_id) || [];
+    list.push(s);
+    salesByCustomer.set(s.customer_id, list);
+  });
+
+  const salePaidMap = new Map<string, number>();
+  salesByCustomer.forEach((custSales, custId) => {
+    let balance = paymentsByCustomer.get(custId) || 0;
+    // Sort oldest first
+    const sorted = [...custSales].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    for (const sale of sorted) {
+      if (sale.status === 'Draft') continue;
+      if (balance >= sale.total) {
+        salePaidMap.set(sale.invoice_id, sale.total);
+        balance -= sale.total;
+      } else if (balance > 0) {
+        salePaidMap.set(sale.invoice_id, balance);
+        balance = 0;
+      } else {
+        salePaidMap.set(sale.invoice_id, 0);
+      }
+    }
+  });
 
   return activeSales.map(sale => {
     const saleItems = items.filter(i => i.invoice_id === sale.invoice_id);
     const customer = customers.find(c => c.customer_id === sale.customer_id);
+    const amountPaid = salePaidMap.has(sale.invoice_id)
+      ? salePaidMap.get(sale.invoice_id)!
+      : (sale.status === 'Paid' ? sale.total : 0);
 
     return {
       ...sale,
       customer_name: customer ? customer.name : 'Unknown Buyer',
       items: saleItems,
+      amount_paid: amountPaid,
     };
   }).reverse(); // Most recent first
 }
 
 export async function getNextInvoiceNumber(): Promise<string> {
-  const rows = await syncManager.getRows(METADATA_TAB);
-  const meta = rowsToObjects(rows, mappers.rowToMetadata);
+  const [metaRows, salesRows] = await Promise.all([
+    syncManager.getRows(METADATA_TAB, true),
+    syncManager.getRows(SALES_TAB, true),
+  ]);
+  const meta = rowsToObjects(metaRows, mappers.rowToMetadata);
   const invoiceNumEntry = meta.find(m => m.key === 'last_invoice_number');
   const prefixEntry = meta.find(m => m.key === 'invoice_prefix');
 
-  const currentNum = invoiceNumEntry ? parseInt(invoiceNumEntry.value, 10) || 1000 : 1000;
+  // Verify against all existing sales in database to guarantee no collision
+  const sales = rowsToObjects(salesRows, mappers.rowToSale);
+  let highestExisting = 1000;
+  sales.forEach(s => {
+    const numPart = parseInt(s.invoice_number?.replace(/\D/g, ''), 10);
+    if (!isNaN(numPart) && numPart > highestExisting) {
+      highestExisting = numPart;
+    }
+  });
+
+  const metaNum = invoiceNumEntry ? parseInt(invoiceNumEntry.value, 10) || 1000 : 1000;
+  const currentNum = Math.max(metaNum, highestExisting);
   const nextNum = currentNum + 1;
   const prefix = prefixEntry ? prefixEntry.value : 'INV-';
 
@@ -73,8 +126,15 @@ export async function createSale(
   const invoiceNumber = await getNextInvoiceNumber();
   const now = new Date().toISOString();
 
+  // Backend verification of totals
+  const calculatedSubtotal = items.reduce((sum, item) => sum + (item.selling_price * item.quantity), 0);
+  const calculatedGst = saleData.gst > 0 ? saleData.gst : 0;
+  const calculatedTotal = calculatedSubtotal + calculatedGst;
+
   const newSale: Sale = {
     ...saleData,
+    subtotal: calculatedSubtotal,
+    total: calculatedTotal,
     invoice_id: invoiceId,
     invoice_number: invoiceNumber,
     is_active: true,
@@ -130,26 +190,33 @@ export async function getSalesKPIs(): Promise<{
   const todayStr = new Date().toISOString().split('T')[0];
   const monthStr = todayStr.slice(0, 7);
 
-  const todayBilled = sales
+  const activeSales = sales.filter(s => s.status !== 'Draft');
+
+  const todayBilled = activeSales
     .filter(s => s.date === todayStr)
     .reduce((sum, s) => sum + s.total, 0);
 
-  const monthlyBilled = sales
+  const monthlyBilled = activeSales
     .filter(s => s.date?.startsWith(monthStr))
     .reduce((sum, s) => sum + s.total, 0);
 
-  const unpaidAmount = sales
-    .filter(s => s.status === 'Unpaid')
-    .reduce((sum, s) => sum + s.total, 0);
+  // Correctly sum remaining balance for both Unpaid AND Partial invoices
+  const unpaidAmount = activeSales.reduce((sum, s) => {
+    const paid = s.amount_paid !== undefined ? s.amount_paid : (s.status === 'Paid' ? s.total : 0);
+    return sum + Math.max(0, s.total - paid);
+  }, 0);
 
-  const totalUnitsDispatched = items.reduce((sum, i) => sum + i.quantity, 0);
+  // Filter items to active non-draft sales only
+  const activeSaleIds = new Set(activeSales.map(s => s.invoice_id));
+  const activeItems = items.filter(i => activeSaleIds.has(i.invoice_id));
+  const totalUnitsDispatched = activeItems.reduce((sum, i) => sum + i.quantity, 0);
 
   return {
     todayBilled,
     monthlyBilled,
     unpaidAmount,
     totalUnitsDispatched,
-    totalInvoices: sales.length,
+    totalInvoices: activeSales.length,
   };
 }
 

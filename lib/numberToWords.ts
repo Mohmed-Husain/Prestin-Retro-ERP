@@ -27,11 +27,14 @@ function convertBelowThousand(num: number): string {
  * e.g. 1240 -> "One Thousand Two Hundred and Forty Rupees only"
  */
 export function numberToIndianRupees(amount: number): string {
-  if (!amount || isNaN(amount) || amount === 0) {
+  if (amount === undefined || amount === null || isNaN(amount) || amount === 0) {
     return 'Zero Rupees only';
   }
 
-  let num = Math.floor(Math.abs(amount));
+  const isNegative = amount < 0;
+  const absAmount = Math.abs(amount);
+  let num = Math.floor(absAmount);
+  const paise = Math.round((absAmount - num) * 100);
   let result = '';
 
   // Crores
@@ -60,5 +63,9 @@ export function numberToIndianRupees(amount: number): string {
     result += convertBelowThousand(num);
   }
 
-  return `${result.trim()} Rupees only`;
+  const prefix = isNegative ? 'Minus ' : '';
+  const rupeesStr = result.trim() ? `${result.trim()} Rupees` : (paise > 0 ? '' : 'Zero Rupees');
+  const paiseStr = paise > 0 ? `${rupeesStr ? ' and ' : ''}${convertBelowThousand(paise)} Paise` : '';
+
+  return `${prefix}${rupeesStr}${paiseStr} only`;
 }

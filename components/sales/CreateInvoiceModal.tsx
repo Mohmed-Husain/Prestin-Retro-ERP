@@ -86,8 +86,11 @@ export default function CreateInvoiceModal({
       if (item.quantity > available) {
         errors[index] = `Only ${available} Pcs available in warehouse`;
       }
-      if (item.quantity <= 0) {
+      if (item.quantity <= 0 || isNaN(item.quantity)) {
         errors[index] = `Quantity must be greater than 0`;
+      }
+      if (item.selling_price <= 0 || isNaN(item.selling_price)) {
+        errors[index] = `Unit rate must be greater than ₹0`;
       }
     });
     return errors;

@@ -25,8 +25,10 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
   const subTotal = invoice.subtotal || invoice.total;
   const grandTotal = invoice.total;
   const isPaid = invoice.status === 'Paid';
-  const receivedAmount = isPaid ? grandTotal : 0;
-  const balanceAmount = grandTotal - receivedAmount;
+  const receivedAmount = invoice.amount_paid !== undefined
+    ? invoice.amount_paid
+    : (isPaid ? grandTotal : 0);
+  const balanceAmount = Math.max(0, grandTotal - receivedAmount);
   const amountInWords = numberToIndianRupees(grandTotal);
 
   return (

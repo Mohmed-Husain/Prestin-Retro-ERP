@@ -27,7 +27,7 @@ export default function AppLock({ children }: AppLockProps) {
     // Load expected PIN from localStorage first for instant access
     const savedPin = localStorage.getItem('preston_app_pin');
     if (savedPin) {
-      setExpectedPin(savedPin);
+      setExpectedPin(String(savedPin).padStart(4, '0'));
     }
 
     // Fetch latest PIN and company profile from settings in background
@@ -35,8 +35,9 @@ export default function AppLock({ children }: AppLockProps) {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.settings?.app_pin) {
-          setExpectedPin(data.settings.app_pin);
-          localStorage.setItem('preston_app_pin', data.settings.app_pin);
+          const cleanPin = String(data.settings.app_pin).padStart(4, '0');
+          setExpectedPin(cleanPin);
+          localStorage.setItem('preston_app_pin', cleanPin);
         }
       })
       .catch(console.error);

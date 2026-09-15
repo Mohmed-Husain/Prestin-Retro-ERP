@@ -79,19 +79,6 @@ export interface ExpenseKPIs {
   breakdown: { name: string; amount: number; percentage: number }[];
 }
 
-export interface MonthlyReportData {
-  totalSales: number;
-  totalExpenses: number;
-  grossProfit: number;
-  netProfit: number;
-  totalInvoices: number;
-  salesVsExpenses: { date: string; sales: number; expenses: number }[];
-  expenseBreakdown: { category: string; amount: number; percentage: number }[];
-  topSellingProducts: { rank: number; name: string; units_sold: number; revenue: number }[];
-  salesByCategory: { category: string; percentage: number }[];
-  monthlyProfitTrend: { month: string; profit: number }[];
-  bestMonth: { month: string; netProfit: number };
-}
 
 export interface Payment {
   payment_id: string;
@@ -119,6 +106,7 @@ export interface Sale {
   // Joined / computed
   customer_name?: string;
   items?: SaleItem[];
+  amount_paid?: number;
 }
 
 export interface ExpenseCategory {

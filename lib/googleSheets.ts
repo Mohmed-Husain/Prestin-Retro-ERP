@@ -51,6 +51,19 @@ export async function appendSheetRow(tabName: string, rowValues: (string | numbe
   });
 }
 
+export async function appendSheetRows(tabName: string, rowsValues: (string | number | boolean)[][]): Promise<void> {
+  if (rowsValues.length === 0) return;
+  const { sheets, spreadsheetId } = await getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${tabName}!A1`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: rowsValues.map(r => r.map(v => String(v))),
+    },
+  });
+}
+
 export async function updateSheetRow(
   tabName: string,
   rowIndex1Indexed: number,

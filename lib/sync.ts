@@ -1,4 +1,4 @@
-import { readSheetRows, appendSheetRow, updateSheetRow, batchUpdateSheetValues, clearSheetData, overwriteSheetRows } from './googleSheets';
+import { readSheetRows, appendSheetRow, appendSheetRows, updateSheetRow, batchUpdateSheetValues, clearSheetData, overwriteSheetRows } from './googleSheets';
 
 interface CacheEntry {
   data: string[][];
@@ -45,6 +45,15 @@ export const syncManager = {
    */
   async appendRow(tabName: string, values: (string | number | boolean)[]): Promise<void> {
     await syncManager.retry(() => appendSheetRow(tabName, values));
+    syncManager.invalidateCache(tabName);
+  },
+
+  /**
+   * Appends multiple rows in a single batch API call and invalidates cache.
+   */
+  async appendRows(tabName: string, rows: (string | number | boolean)[][]): Promise<void> {
+    if (rows.length === 0) return;
+    await syncManager.retry(() => appendSheetRows(tabName, rows));
     syncManager.invalidateCache(tabName);
   },
 

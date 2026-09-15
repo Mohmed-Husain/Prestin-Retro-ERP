@@ -59,7 +59,8 @@ export async function updateProductStock(
   movementType: StockMovementType,
   reason: string
 ): Promise<Product> {
-  const rows = await syncManager.getRows(TAB_NAME);
+  // Force refresh to get real-time stock and prevent race condition overwrite
+  const rows = await syncManager.getRows(TAB_NAME, true);
   const productsWithIndex = rowsToObjects(rows, mappers.rowToProduct);
   const target = productsWithIndex.find(p => p.product_id === productId);
 

@@ -57,7 +57,7 @@ export default function SettingsPage() {
         company_name: savedName || prev.company_name,
         company_logo: savedLogo || prev.company_logo,
         user_name: savedUser || prev.user_name,
-        app_pin: savedPin || prev.app_pin,
+        app_pin: savedPin ? String(savedPin).padStart(4, '0') : prev.app_pin,
       }));
     }
 
@@ -65,11 +65,12 @@ export default function SettingsPage() {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.settings) {
-          setSettings(prev => ({ ...prev, ...data.settings }));
+          const cleanPin = data.settings.app_pin ? String(data.settings.app_pin).padStart(4, '0') : "1234";
+          setSettings(prev => ({ ...prev, ...data.settings, app_pin: cleanPin }));
           if (data.settings.company_name) localStorage.setItem("preston_company_name", data.settings.company_name);
           if (data.settings.company_logo !== undefined) localStorage.setItem("preston_company_logo", data.settings.company_logo);
           if (data.settings.user_name) localStorage.setItem("preston_user_name", data.settings.user_name);
-          if (data.settings.app_pin) localStorage.setItem("preston_app_pin", data.settings.app_pin);
+          localStorage.setItem("preston_app_pin", cleanPin);
         }
       })
       .catch(console.error)

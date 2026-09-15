@@ -28,7 +28,11 @@ export async function PATCH(
     // Check if this is a stock update/restock
     if (body.stockAdjustment !== undefined) {
       const { quantity, movementType = 'IN', reason = 'Manual Inventory Update' } = body;
-      const updated = await updateProductStock(id, Number(quantity), movementType, reason);
+      const numQty = Number(quantity);
+      if (quantity === undefined || quantity === null || isNaN(numQty) || numQty <= 0) {
+        return NextResponse.json({ success: false, error: 'A valid positive quantity is required' }, { status: 400 });
+      }
+      const updated = await updateProductStock(id, numQty, movementType, reason);
       return NextResponse.json({ success: true, product: updated });
     }
 

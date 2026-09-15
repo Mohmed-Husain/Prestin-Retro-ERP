@@ -32,16 +32,20 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
   const effectiveMonthlySales = thisMonthSales;
 
-  // 3. COGS & Gross Profit
-  const cogs = saleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0);
-  const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
-  const grossProfit = Math.max(0, totalRevenue - cogs);
+  // 3. COGS & Gross Profit (Filter to active, non-draft sales only)
+  const activeSales = sales.filter(s => s.is_active && s.status !== 'Draft');
+  const activeSaleIds = new Set(activeSales.map(s => s.invoice_id));
+  const activeSaleItems = saleItems.filter(item => activeSaleIds.has(item.invoice_id));
+  const cogs = activeSaleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0);
+  const totalRevenue = activeSales.reduce((sum, s) => sum + s.total, 0);
+  const grossProfit = totalRevenue - cogs; // Allow true negative gross profit
 
-  // 4. Expenses
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+  // 4. Expenses (Active only)
+  const activeExpenses = expenses.filter(e => e.is_active);
+  const totalExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-  // 5. Net Profit
-  const netProfit = Math.max(0, grossProfit - totalExpenses);
+  // 5. Net Profit (Allow true negative net profit / loss)
+  const netProfit = grossProfit - totalExpenses;
 
   // 6. Expense breakdown by category
   const expenseCatMap = new Map<string, number>();
@@ -61,7 +65,7 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
   // 8. Top Selling Products
   const prodSalesMap = new Map<string, { units_sold: number; revenue: number; sku: string; name: string }>();
-  saleItems.forEach(item => {
+  activeSaleItems.forEach(item => {
     const existing = prodSalesMap.get(item.product_id) || {
       units_sold: 0,
       revenue: 0,
@@ -134,14 +138,16 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
   // Expenses = Expense Total
   const totalExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-  // COGS = SaleItems Cost
-  const cogs = saleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0);
+  // COGS = SaleItems Cost (Active non-draft sales only)
+  const activeSaleIds = new Set(activeSales.map(s => s.invoice_id));
+  const activeSaleItems = saleItems.filter(item => activeSaleIds.has(item.invoice_id));
+  const cogs = activeSaleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0);
 
-  // Gross Profit = Revenue - COGS
-  const grossProfit = Math.max(0, totalSales - cogs);
+  // Gross Profit = Revenue - COGS (Allow true loss)
+  const grossProfit = totalSales - cogs;
 
-  // Net Profit = Gross Profit - Expenses
-  const netProfit = Math.max(0, grossProfit - totalExpenses);
+  // Net Profit = Gross Profit - Expenses (Allow true loss)
+  const netProfit = grossProfit - totalExpenses;
 
   // Sales Trend (grouped by date)
   const salesByDate = new Map<string, number>();
@@ -184,7 +190,7 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
 
   // Sales by Category
   const catSalesMap = new Map<string, number>();
-  saleItems.forEach(item => {
+  activeSaleItems.forEach(item => {
     const prod = products.find(p => p.product_id === item.product_id);
     const cat = prod?.category || 'Others';
     catSalesMap.set(cat, (catSalesMap.get(cat) || 0) + item.selling_price * item.quantity);

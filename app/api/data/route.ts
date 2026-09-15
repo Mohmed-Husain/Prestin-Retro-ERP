@@ -110,9 +110,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: "Unsupported module: " + module }, { status: 400 });
       }
 
-      for (const row of formattedRows) {
-        await syncManager.appendRow(tabName, row);
-      }
+      await syncManager.appendRows(tabName, formattedRows);
       syncManager.invalidateCache(tabName);
 
       return NextResponse.json({
