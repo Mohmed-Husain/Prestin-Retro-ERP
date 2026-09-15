@@ -36,7 +36,7 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
         {/* Company Info (Left) */}
         <div>
           <h1 className="text-xl font-bold tracking-tight text-neutral-900 uppercase">
-            PRISTINE RETRO ENTERPRISE
+            PRESTON RETRO ENTERPRISE
           </h1>
           <div className="text-xs text-neutral-800 space-y-0.5 mt-1 font-medium">
             <p>Hussain tekri, Palanpur highway, Kanodar, Gujarat</p>
@@ -50,7 +50,7 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
         {/* Vintage Seal Stamp Logo (Right) */}
         <div className="w-20 h-20 rounded-full border-2 border-neutral-900 flex flex-col items-center justify-center text-center p-1 flex-shrink-0 relative">
           <span className="text-[7px] font-bold uppercase tracking-wider text-neutral-800 leading-tight">
-            PRISTINE RETRO ENTERPRISE
+            PRESTON RETRO ENTERPRISE
           </span>
           {/* Sewing Machine Icon Representation */}
           <div className="my-0.5">
@@ -173,17 +173,24 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
         </div>
 
         {/* Right: Calculations & Signature */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-neutral-800 font-medium px-2 py-1">
-            <span>Sub Total</span>
-            <span>₹ {subTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-neutral-800 font-medium px-2 py-0.5">
+              <span>Sub Total</span>
+              <span>₹ {subTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+            </div>
 
-          {/* Purple Total Highlight Bar */}
-          <div className="flex justify-between font-bold bg-[#818cf8] text-white px-3 py-1.5 rounded-sm">
-            <span>Total</span>
-            <span>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-          </div>
+            {invoice.gst > 0 && (
+              <div className="flex justify-between text-neutral-600 px-2 py-0.5">
+                <span>GST (Tax)</span>
+                <span>₹ {invoice.gst.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+              </div>
+            )}
+
+            {/* Purple Total Highlight Bar */}
+            <div className="flex justify-between font-bold bg-[#818cf8] text-white px-3 py-1.5 rounded-sm">
+              <span>Total</span>
+              <span>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+            </div>
 
           <div className="flex justify-between text-neutral-700 px-2 py-0.5">
             <span>Received</span>
@@ -198,7 +205,7 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
           {/* Signature Block */}
           <div className="pt-8 text-center sm:text-right">
             <p className="text-[11px] font-bold text-neutral-900">
-              For: PRISTINE RETRO ENTERPRISE
+              For: PRESTON RETRO ENTERPRISE
             </p>
             <div className="h-12" /> {/* Space for signature stamp */}
             <p className="text-xs font-bold text-neutral-900 border-t border-neutral-300 pt-1 inline-block min-w-[160px] text-center">

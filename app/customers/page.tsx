@@ -158,7 +158,14 @@ export default function CustomersPage() {
 
   const handleSendReminder = () => {
     if (!selectedCustomer) return;
-    toast.success(`Payment reminder dispatched to ${selectedCustomer.phone} for ${formatCurrency(selectedCustomer.outstanding || 0)}`);
+    const cleanPhone = selectedCustomer.phone.replace(/[^0-9]/g, '');
+    const message = encodeURIComponent(
+      `Hello ${selectedCustomer.name}, this is a friendly reminder from Preston Retro regarding your outstanding balance of ${formatCurrency(selectedCustomer.outstanding || 0)}. Please arrange payment at your earliest convenience. Thank you!`
+    );
+    if (cleanPhone) {
+      window.open(`https://wa.me/${cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone}?text=${message}`, '_blank');
+    }
+    toast.success(`Payment reminder opened for ${selectedCustomer.name} (${selectedCustomer.phone})`);
   };
 
   // Helper for customer avatar initials

@@ -153,3 +153,31 @@ export async function getSalesKPIs(): Promise<{
   };
 }
 
+export async function getSaleById(invoiceId: string): Promise<Sale | null> {
+  const sales = await getAllSales();
+  return sales.find(s => s.invoice_id === invoiceId) || null;
+}
+
+export async function updateSaleStatus(
+  invoiceId: string,
+  newStatus: 'Draft' | 'Paid' | 'Unpaid' | 'Dispatched' | 'Partial'
+): Promise<Sale> {
+  const rows = await syncManager.getRows(SALES_TAB);
+  const salesWithIndex = rowsToObjects(rows, mappers.rowToSale);
+  const target = salesWithIndex.find(s => s.invoice_id === invoiceId);
+
+  if (!target) {
+    throw new Error(`Invoice with ID ${invoiceId} not found`);
+  }
+
+  const updated: Sale = {
+    ...target,
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+  };
+
+  const rowValues = mappers.saleToRow(updated);
+  await syncManager.updateRow(SALES_TAB, (target as any)._rowIndex, rowValues);
+  return updated;
+}
+

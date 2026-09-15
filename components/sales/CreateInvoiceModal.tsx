@@ -34,8 +34,10 @@ export default function CreateInvoiceModal({
   const [loading, setLoading] = useState(false);
   const [customerId, setCustomerId] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [status, setStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
+  const [status, setStatus] = useState<'Unpaid' | 'Paid' | 'Draft'>('Unpaid');
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
+  const [gstEnabled, setGstEnabled] = useState<boolean>(true);
+  const [gstRate, setGstRate] = useState<number>(5);
 
   // Initialize with first customer and first in-stock product
   useEffect(() => {
@@ -69,8 +71,9 @@ export default function CreateInvoiceModal({
   }, [lineItems]);
 
   const gst = useMemo(() => {
-    return Math.round(subtotal * 0.05); // 5% apparel GST
-  }, [subtotal]);
+    if (!gstEnabled) return 0;
+    return Math.round(subtotal * (gstRate / 100));
+  }, [subtotal, gstEnabled, gstRate]);
 
   const grandTotal = subtotal + gst;
 
@@ -379,54 +382,120 @@ export default function CreateInvoiceModal({
             </div>
           </div>
 
-          {/* Billing Settlement Status & Totals */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-neutral-50 border border-neutral-100 mt-4">
-            <div>
-              <label className="block font-semibold text-neutral-700 mb-1.5">Payment Terms</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setStatus('Unpaid')}
-                  className={`py-2 rounded-xl text-xs font-semibold transition-all ${
-                    status === 'Unpaid'
-                      ? 'bg-neutral-900 text-white shadow-sm'
-                      : 'bg-white text-neutral-600 border border-neutral-200'
-                  }`}
-                >
-                  Unpaid (Khata Due)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatus('Paid')}
-                  className={`py-2 rounded-xl text-xs font-semibold transition-all ${
-                    status === 'Paid'
-                      ? 'bg-neutral-900 text-white shadow-sm'
-                      : 'bg-white text-neutral-600 border border-neutral-200'
-                  }`}
-                >
-                  Paid (Settled)
-                </button>
+          {/* GST Calculation & Payment Terms Box */}
+          <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 mt-4 space-y-4">
+            {/* GST Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200/60">
+              <div>
+                <label className="block font-semibold text-neutral-800 text-xs">GST Applicable</label>
+                <p className="text-[11px] text-neutral-400">Toggle whether this invoice includes Goods & Services Tax</p>
               </div>
-              <p className="text-[10px] text-neutral-400 mt-2">
-                {status === 'Unpaid'
-                  ? `Adds ${formatCurrency(grandTotal)} to ${selectedCustomer?.name || 'buyer'}'s ledger balance.`
-                  : 'Marks invoice as settled immediately.'}
-              </p>
+
+              <div className="flex items-center gap-3">
+                {/* GST Toggle */}
+                <div className="flex items-center p-0.5 bg-neutral-200/80 rounded-full">
+                  <button
+                    type="button"
+                    onClick={() => setGstEnabled(false)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                      !gstEnabled ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+                    }`}
+                  >
+                    No (0%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGstEnabled(true)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                      gstEnabled ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-800'
+                    }`}
+                  >
+                    Yes (GST)
+                  </button>
+                </div>
+
+                {/* GST Rate Selector */}
+                {gstEnabled && (
+                  <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl p-1 text-xs font-medium">
+                    {[0, 5, 12, 18, 28].map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => setGstRate(rate)}
+                        className={`px-2 py-0.5 rounded-lg transition-all font-mono ${
+                          gstRate === rate ? 'bg-neutral-900 text-white font-bold' : 'text-neutral-600 hover:bg-neutral-100'
+                        }`}
+                      >
+                        {rate}%
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Calculations Breakdown */}
-            <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between text-neutral-500">
-                <span>Subtotal</span>
-                <span className="font-semibold text-neutral-900">{formatCurrency(subtotal)}</span>
+            {/* Billing Settlement Status & Totals */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-neutral-700 mb-1.5">Payment Terms</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStatus('Unpaid')}
+                    className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+                      status === 'Unpaid'
+                        ? 'bg-neutral-900 text-white shadow-sm'
+                        : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+                    }`}
+                  >
+                    Unpaid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatus('Paid')}
+                    className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+                      status === 'Paid'
+                        ? 'bg-neutral-900 text-white shadow-sm'
+                        : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+                    }`}
+                  >
+                    Paid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatus('Draft')}
+                    className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+                      status === 'Draft'
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+                    }`}
+                  >
+                    Draft
+                  </button>
+                </div>
+                <p className="text-[10px] text-neutral-400 mt-2">
+                  {status === 'Unpaid'
+                    ? `Adds ${formatCurrency(grandTotal)} to ${selectedCustomer?.name || 'buyer'}'s ledger balance.`
+                    : status === 'Draft'
+                    ? 'Saves invoice without marking as active dispatch.'
+                    : 'Marks invoice as settled immediately.'}
+                </p>
               </div>
-              <div className="flex justify-between text-neutral-500">
-                <span>GST (5%)</span>
-                <span className="font-semibold text-neutral-900">{formatCurrency(gst)}</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold text-neutral-900 pt-2 border-t border-neutral-200/80">
-                <span>Grand Total</span>
-                <span className="text-base text-neutral-900">{formatCurrency(grandTotal)}</span>
+
+              {/* Calculations Breakdown */}
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between text-neutral-500">
+                  <span>Subtotal (Σ price × qty)</span>
+                  <span className="font-semibold text-neutral-900">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-neutral-500">
+                  <span>GST ({gstEnabled ? `${gstRate}%` : '0% Exempt'})</span>
+                  <span className="font-semibold text-neutral-900">{formatCurrency(gst)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-neutral-900 pt-2 border-t border-neutral-200/80">
+                  <span>Grand Total</span>
+                  <span className="text-base text-neutral-900">{formatCurrency(grandTotal)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -438,6 +507,21 @@ export default function CreateInvoiceModal({
               className="px-4 py-2 rounded-xl text-neutral-600 hover:bg-neutral-100 font-medium transition-colors"
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                setStatus('Draft');
+                // Allow state update then submit
+                setTimeout(() => {
+                  const form = (e.target as HTMLElement).closest('form');
+                  if (form) form.requestSubmit();
+                }, 50);
+              }}
+              disabled={loading || hasErrors}
+              className="px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-neutral-700 font-semibold hover:bg-neutral-50 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            >
+              Save as Draft
             </button>
             <button
               type="submit"
@@ -452,7 +536,7 @@ export default function CreateInvoiceModal({
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Generate Invoice & Dispatch
+                  {status === 'Draft' ? 'Save Draft' : 'Generate Invoice & Dispatch'}
                 </>
               )}
             </button>

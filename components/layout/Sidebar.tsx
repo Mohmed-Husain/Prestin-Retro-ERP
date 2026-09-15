@@ -37,11 +37,11 @@ export default function Sidebar() {
             </svg>
           </div>
           <div>
-            <span className="text-base font-semibold tracking-tight text-neutral-900 block leading-tight">
-              Threadly
+            <span className="text-base font-bold tracking-tight text-neutral-900 block leading-tight">
+              Preston Retro
             </span>
             <span className="text-[10px] font-medium tracking-wider text-neutral-400 uppercase">
-              CLOTHING FACTORY
+              FACTORY OS
             </span>
           </div>
         </Link>

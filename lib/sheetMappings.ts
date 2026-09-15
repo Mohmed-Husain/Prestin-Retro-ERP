@@ -1,4 +1,4 @@
-import { Product, StockMovement, Customer, Payment, Sale, SaleItem, Expense, MetadataSetting } from './types';
+import { Product, StockMovement, Customer, Payment, Sale, SaleItem, Expense, MetadataSetting, ExpenseCategory } from './types';
 
 export function rowsToObjects<T>(rows: string[][], mapFn: (row: string[], index: number) => T | null): T[] {
   if (!rows || rows.length <= 1) return [];
@@ -249,5 +249,28 @@ export const mappers = {
       key: row[0] || '',
       value: row[1] || '',
     };
+  },
+
+  rowToExpenseCategory(row: string[], rowIndex: number): (ExpenseCategory & { _rowIndex: number }) | null {
+    if (!row[0] && !row[1]) return null;
+    const isActive = row[3] === undefined || row[3] === '' || String(row[3]).toUpperCase() === 'TRUE';
+    return {
+      _rowIndex: rowIndex,
+      category_id: row[0] || '',
+      name: row[1] || '',
+      icon: row[2] || 'DollarSign',
+      is_active: isActive,
+      created_at: row[4] || new Date().toISOString(),
+    };
+  },
+
+  expenseCategoryToRow(category: ExpenseCategory): (string | number | boolean)[] {
+    return [
+      category.category_id,
+      category.name,
+      category.icon,
+      category.is_active ? 'TRUE' : 'FALSE',
+      category.created_at,
+    ];
   },
 };

@@ -112,13 +112,21 @@ export interface Sale {
   subtotal: number;
   gst: number;
   total: number;
-  status: 'Paid' | 'Unpaid' | 'Partial';
+  status: 'Draft' | 'Paid' | 'Unpaid' | 'Dispatched' | 'Partial';
   is_active: boolean;
   created_at: string;
   updated_at: string;
   // Joined / computed
   customer_name?: string;
   items?: SaleItem[];
+}
+
+export interface ExpenseCategory {
+  category_id: string;
+  name: string;
+  icon: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface SaleItem {
@@ -187,9 +195,12 @@ export interface DashboardKPIs {
 export interface MonthlyReportData {
   totalSales: number;
   totalExpenses: number;
+  cogs: number;
   grossProfit: number;
   netProfit: number;
   totalInvoices: number;
+  salesTrend: { date: string; sales: number }[];
+  expenseTrend: { date: string; amount: number }[];
   salesVsExpenses: { date: string; sales: number; expenses: number }[];
   expenseBreakdown: { category: string; amount: number; percentage: number }[];
   topSellingProducts: { rank: number; name: string; units_sold: number; revenue: number }[];

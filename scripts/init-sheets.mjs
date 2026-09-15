@@ -116,11 +116,22 @@ const SHEETS_SCHEMA = {
     ['exp_005', 'Packaging Material', 'Packaging', 4750, 'Cash', '2025-05-20', 'Poly bags & custom cardboard boxes', 'TRUE', '2025-05-20T12:00:00Z', '2025-05-20T12:00:00Z'],
     ['exp_006', 'Machine Maintenance', 'Maintenance', 6300, 'Bank Transfer', '2025-05-18', 'Juki 4-thread overlock service', 'TRUE', '2025-05-18T10:30:00Z', '2025-05-18T10:30:00Z']
   ],
+  ExpenseCategories: [
+    ['category_id', 'name', 'icon', 'is_active', 'created_at'],
+    ['cat_01', 'Fabric', 'Shirt', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_02', 'Thread', 'Box', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_03', 'Packaging', 'Box', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_04', 'Electricity', 'Zap', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_05', 'Salary', 'Users', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_06', 'Transport', 'Truck', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_07', 'Machine Maintenance', 'Wrench', 'TRUE', '2025-01-01T00:00:00Z'],
+    ['cat_08', 'Miscellaneous', 'DollarSign', 'TRUE', '2025-01-01T00:00:00Z']
+  ],
   Metadata: [
     ['key', 'value'],
     ['last_invoice_number', '1043'],
     ['last_customer_number', '6'],
-    ['company_name', 'Threadly Clothing Factory'],
+    ['company_name', 'Preston Retro Enterprise'],
     ['gst_number', '27AACCT9981K1Z3'],
     ['factory_address', 'Plot 42, Textile Industrial Estate, Bhiwandi, MH - 421302'],
     ['invoice_prefix', 'INV-'],

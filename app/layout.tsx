@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import AppLock from '@/components/auth/AppLock';
 
 export const metadata: Metadata = {
-  title: 'Threadly Factory OS — Clothing Factory Management',
+  title: 'Preston Retro — Factory OS',
   description: 'Production-quality OS for modern apparel factories, powered by Google Sheets and Next.js.',
 };
 
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <AppLock>{children}</AppLock>
+      </body>
     </html>
   );
 }

@@ -30,7 +30,7 @@ export default function SalesPage() {
   const [kpis, setKpis] = useState<SalesKPIs | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPAID' | 'PAID' | 'DISPATCHED' | 'DRAFT'>('ALL');
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -79,6 +79,8 @@ export default function SalesPage() {
       // Status filter
       if (statusFilter === 'UNPAID' && s.status !== 'Unpaid') return false;
       if (statusFilter === 'PAID' && s.status !== 'Paid') return false;
+      if (statusFilter === 'DISPATCHED' && s.status !== 'Dispatched') return false;
+      if (statusFilter === 'DRAFT' && s.status !== 'Draft') return false;
 
       // Search query
       if (searchQuery.trim()) {
@@ -92,6 +94,27 @@ export default function SalesPage() {
       return true;
     });
   }, [sales, statusFilter, searchQuery]);
+
+  const handleMarkDispatched = async (invoiceId: string) => {
+    try {
+      const res = await fetch(`/api/sales/${invoiceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Dispatched' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update dispatch status');
+      }
+      toast.success('Invoice marked as Dispatched in Google Sheets!');
+      setSales(prev => prev.map(s => s.invoice_id === invoiceId ? { ...s, status: 'Dispatched' } : s));
+      if (selectedInvoice && selectedInvoice.invoice_id === invoiceId) {
+        setSelectedInvoice(prev => prev ? { ...prev, status: 'Dispatched' } : null);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error updating status');
+    }
+  };
 
   const handleInvoiceCreated = (newSale: Sale) => {
     setSales(prev => [newSale, ...prev]);
@@ -265,43 +288,63 @@ export default function SalesPage() {
                 statusFilter === 'PAID' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
               }`}
             >
-              Paid & Settled
+              Paid
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('DISPATCHED')}
+              className={`px-4 py-1.5 rounded-full font-medium transition-all ${
+                statusFilter === 'DISPATCHED' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              Dispatched
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('DRAFT')}
+              className={`px-4 py-1.5 rounded-full font-medium transition-all ${
+                statusFilter === 'DRAFT' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              Drafts
             </button>
           </div>
 
           <div className="text-xs text-neutral-400">
-            Showing <span className="font-semibold text-neutral-900">{filteredSales.length}</span> invoices
+            Showing <span className="font-semibold text-neutral-700">{filteredSales.length}</span> invoices
           </div>
         </div>
 
         {/* Invoices Table */}
-        <div className="overflow-x-auto mt-2">
+        <div className="overflow-x-auto mt-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-neutral-400">
+            <div className="py-12 flex flex-col items-center justify-center text-neutral-400 gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-xs">Fetching invoices from Google Sheets...</span>
+              <span className="text-xs font-medium">Loading invoices from Google Sheets...</span>
             </div>
           ) : filteredSales.length === 0 ? (
-            <div className="text-center py-16 text-neutral-400 text-xs">
-              No matching invoices found.
+            <div className="py-12 text-center text-xs text-neutral-400">
+              No invoices match your search or filter.
             </div>
           ) : (
             <table className="w-full text-left text-xs">
-              <thead className="text-[10px] uppercase font-semibold text-neutral-400 border-b border-neutral-100 tracking-wider">
+              <thead className="text-neutral-400 uppercase tracking-wider text-[10px] font-semibold border-b border-neutral-100">
                 <tr>
-                  <th className="py-3.5 px-4">Invoice #</th>
-                  <th className="py-3.5 px-4">Date</th>
-                  <th className="py-3.5 px-4">Wholesale Buyer</th>
-                  <th className="py-3.5 px-4">Items Shipped</th>
-                  <th className="py-3.5 px-4 text-right">Tax (GST)</th>
-                  <th className="py-3.5 px-4 text-right">Grand Total</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4">Invoice #</th>
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4">Wholesale Buyer</th>
+                  <th className="py-3 px-4">Items Summary</th>
+                  <th className="py-3 px-4 text-right">GST</th>
+                  <th className="py-3 px-4 text-right">Total</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {filteredSales.map((sale) => {
                   const isUnpaid = sale.status === 'Unpaid';
+                  const isDispatched = sale.status === 'Dispatched';
+                  const isDraft = sale.status === 'Draft';
                   const totalUnits = sale.items?.reduce((sum, i) => sum + i.quantity, 0) || 0;
                   const itemSummary = sale.items && sale.items.length > 0
                     ? `${totalUnits} Pcs (${sale.items.map(i => `${i.sku}`).join(', ')})`
@@ -329,7 +372,15 @@ export default function SalesPage() {
                         {formatCurrency(sale.total)}
                       </td>
                       <td className="py-4 px-4 text-center">
-                        {isUnpaid ? (
+                        {isDraft ? (
+                          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-600 border border-neutral-200 whitespace-nowrap">
+                            Draft
+                          </span>
+                        ) : isDispatched ? (
+                          <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
+                            ✓ Dispatched
+                          </span>
+                        ) : isUnpaid ? (
                           <span className="inline-block px-3 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
                             Unpaid - Due in 15d
                           </span>
@@ -340,13 +391,24 @@ export default function SalesPage() {
                         )}
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedInvoice(sale)}
-                          className="px-3 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all"
-                        >
-                          View Bill
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {!isDispatched && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkDispatched(sale.invoice_id)}
+                              className="px-3 py-1.5 rounded-full bg-neutral-900 text-white text-[11px] font-medium hover:bg-black shadow-sm transition-all whitespace-nowrap"
+                            >
+                              Dispatch
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedInvoice(sale)}
+                            className="px-3 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all whitespace-nowrap"
+                          >
+                            View Bill
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

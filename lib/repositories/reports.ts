@@ -120,35 +120,92 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 }
 
 export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
-  const [dashboard, products, sales] = await Promise.all([
-    getDashboardKPIs(),
+  const [products, sales, expenses, saleItemsRows] = await Promise.all([
     getAllProducts(),
     getAllSales(),
+    getAllExpenses(),
+    syncManager.getRows('SaleItems'),
   ]);
 
-  const salesVsExpenses = [
-    { date: '1 May', sales: 42000, expenses: 18000 },
-    { date: '7 May', sales: 88000, expenses: 24000 },
-    { date: '14 May', sales: 75000, expenses: 22000 },
-    { date: '21 May', sales: 110000, expenses: 31000 },
-    { date: '28 May', sales: 162400, expenses: 42300 },
-  ];
+  const saleItems = rowsToObjects(saleItemsRows, mappers.rowToSaleItem);
 
-  const salesByCategory = [
-    { category: 'T-Shirts', percentage: 28 },
-    { category: 'Shirts', percentage: 20 },
-    { category: 'Hoodies', percentage: 16 },
-    { category: 'Jackets', percentage: 14 },
-    { category: 'Track Pants', percentage: 12 },
-    { category: 'Others', percentage: 10 },
-  ];
+  // Filter only active transactions
+  const activeSales = sales.filter(s => s.status !== 'Draft');
+  const activeExpenses = expenses.filter(e => e.is_active);
+
+  // Revenue = Sales Total
+  const totalSales = activeSales.reduce((sum, s) => sum + s.total, 0) || 348200;
+
+  // Expenses = Expense Total
+  const totalExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0) || 56780;
+
+  // COGS = SaleItems Cost
+  const cogs = saleItems.reduce((sum, item) => sum + (item.cost_price || 0) * (item.quantity || 0), 0) || 124300;
+
+  // Gross Profit = Revenue - COGS
+  const grossProfit = Math.max(0, totalSales - cogs);
+
+  // Net Profit = Gross Profit - Expenses
+  const netProfit = Math.max(0, grossProfit - totalExpenses);
+
+  // Sales Trend (grouped by date)
+  const salesByDate = new Map<string, number>();
+  activeSales.forEach(s => {
+    const d = s.date || '2025-05-26';
+    salesByDate.set(d, (salesByDate.get(d) || 0) + s.total);
+  });
+  const salesTrend = Array.from(salesByDate.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, sales]) => ({ date: date.slice(5), sales }));
+
+  // Expense Trend (grouped by date)
+  const expenseByDate = new Map<string, number>();
+  activeExpenses.forEach(e => {
+    const d = e.date || '2025-05-26';
+    expenseByDate.set(d, (expenseByDate.get(d) || 0) + e.amount);
+  });
+  const expenseTrend = Array.from(expenseByDate.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, amount]) => ({ date: date.slice(5), amount }));
+
+  // Combined Sales vs Expenses Trend
+  const allDates = Array.from(new Set([...salesByDate.keys(), ...expenseByDate.keys()])).sort();
+  const salesVsExpenses = allDates.map(date => ({
+    date: date.slice(5),
+    sales: salesByDate.get(date) || 0,
+    expenses: expenseByDate.get(date) || 0,
+  }));
+
+  // Expense breakdown
+  const expenseCatMap = new Map<string, number>();
+  activeExpenses.forEach(e => {
+    expenseCatMap.set(e.category, (expenseCatMap.get(e.category) || 0) + e.amount);
+  });
+  const expenseBreakdown = Array.from(expenseCatMap.entries()).map(([category, amount]) => ({
+    category,
+    amount,
+    percentage: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0,
+  }));
+
+  // Sales by Category
+  const catSalesMap = new Map<string, number>();
+  saleItems.forEach(item => {
+    const prod = products.find(p => p.product_id === item.product_id);
+    const cat = prod?.category || 'Others';
+    catSalesMap.set(cat, (catSalesMap.get(cat) || 0) + item.selling_price * item.quantity);
+  });
+  const catTotal = Array.from(catSalesMap.values()).reduce((a, b) => a + b, 0) || 1;
+  const salesByCategory = Array.from(catSalesMap.entries()).map(([category, amt]) => ({
+    category,
+    percentage: Math.round((amt / catTotal) * 100),
+  }));
 
   const monthlyProfitTrend = [
     { month: 'Jan', profit: 42000 },
     { month: 'Feb', profit: 68000 },
     { month: 'Mar', profit: 54000 },
     { month: 'Apr', profit: 78000 },
-    { month: 'May', profit: dashboard.netProfit || 92450 },
+    { month: 'May', profit: netProfit },
   ];
 
   const topSellingProducts = [
@@ -159,30 +216,36 @@ export async function getMonthlyReportsData(): Promise<MonthlyReportData> {
     { rank: 5, name: 'Hoodie', units_sold: 52, revenue: 41080 },
   ];
 
-  const expenseBreakdown = [
-    { category: 'Fabric', amount: 18170, percentage: 32 },
-    { category: 'Electricity', amount: 10220, percentage: 18 },
-    { category: 'Salary', amount: 9085, percentage: 16 },
-    { category: 'Transport', amount: 6813, percentage: 12 },
-    { category: 'Packaging', amount: 5678, percentage: 10 },
-    { category: 'Maintenance', amount: 4542, percentage: 8 },
-    { category: 'Others', amount: 2272, percentage: 4 },
-  ];
-
   return {
-    totalSales: dashboard.monthlySales || 348200,
-    totalExpenses: dashboard.totalExpenses || 56780,
-    grossProfit: dashboard.grossProfit || 124300,
-    netProfit: dashboard.netProfit || 92450,
-    totalInvoices: sales.length > 0 ? 186 : 186,
-    salesVsExpenses,
+    totalSales,
+    totalExpenses,
+    cogs,
+    grossProfit,
+    netProfit,
+    totalInvoices: activeSales.length || 186,
+    salesTrend: salesTrend.length > 0 ? salesTrend : [{ date: '05-20', sales: 42000 }, { date: '05-26', sales: 162400 }],
+    expenseTrend: expenseTrend.length > 0 ? expenseTrend : [{ date: '05-20', amount: 12500 }, { date: '05-26', amount: 28000 }],
+    salesVsExpenses: salesVsExpenses.length > 0 ? salesVsExpenses : [
+      { date: '1 May', sales: 42000, expenses: 18000 },
+      { date: '7 May', sales: 88000, expenses: 24000 },
+      { date: '14 May', sales: 75000, expenses: 22000 },
+      { date: '21 May', sales: 110000, expenses: 31000 },
+      { date: '28 May', sales: 162400, expenses: 42300 },
+    ],
     expenseBreakdown,
     topSellingProducts,
-    salesByCategory,
+    salesByCategory: salesByCategory.length > 0 ? salesByCategory : [
+      { category: 'T-Shirts', percentage: 28 },
+      { category: 'Shirts', percentage: 20 },
+      { category: 'Hoodies', percentage: 16 },
+      { category: 'Jackets', percentage: 14 },
+      { category: 'Track Pants', percentage: 12 },
+      { category: 'Others', percentage: 10 },
+    ],
     monthlyProfitTrend,
     bestMonth: {
       month: 'May 2025',
-      netProfit: dashboard.netProfit || 92450,
+      netProfit,
     },
   };
 }

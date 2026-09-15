@@ -30,18 +30,13 @@ import ExpenseTrendChart from '@/components/expenses/ExpenseTrendChart';
 import ExpenseBreakdownDonut from '@/components/expenses/ExpenseBreakdownDonut';
 import { toast } from 'sonner';
 
-const CATEGORIES = [
-  'Fabric',
-  'Electricity',
-  'Salary',
-  'Transport',
-  'Packaging',
-  'Maintenance',
-  'Others',
-];
+import AddCategoryModal from '@/components/expenses/AddCategoryModal';
+import { ExpenseCategory } from '@/lib/types';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [kpis, setKpis] = useState<ExpenseKPIs | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,11 +56,22 @@ export default function ExpensesPage() {
   const fetchExpenses = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/expenses?kpis=true');
-      const data = await res.json();
+      const [expRes, catRes] = await Promise.all([
+        fetch('/api/expenses?kpis=true'),
+        fetch('/api/expense-categories'),
+      ]);
+      const data = await expRes.json();
+      const catData = await catRes.json();
+
       if (data.success) {
         setExpenses(data.expenses || []);
         setKpis(data.kpis || null);
+      }
+      if (catData.success && catData.categories) {
+        setCategories(catData.categories);
+        if (catData.categories.length > 0 && !formData.category) {
+          setFormData(prev => ({ ...prev, category: catData.categories[0].name }));
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -167,17 +173,27 @@ export default function ExpensesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            const formEl = document.getElementById('quick-expense-form');
-            formEl?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-neutral-900 text-white hover:bg-black text-xs font-semibold shadow-sm transition-all self-start md:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>Add Expense</span>
-        </button>
+        <div className="flex items-center gap-2.5 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 text-xs font-semibold shadow-sm transition-all"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>+ New Category</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const formEl = document.getElementById('quick-expense-form');
+              formEl?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-neutral-900 text-white hover:bg-black text-xs font-semibold shadow-sm transition-all"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Add Expense</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 Floating KPI Cards */}
@@ -342,8 +358,8 @@ export default function ExpensesPage() {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 bg-white text-xs"
                 >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.map((cat) => (
+                    <option key={cat.category_id} value={cat.name}>{cat.name}</option>
                   ))}
                 </select>
               </div>
@@ -450,8 +466,8 @@ export default function ExpensesPage() {
                 className="appearance-none pl-7 pr-8 py-1.5 rounded-full bg-white border border-neutral-200 text-xs font-semibold text-neutral-700 cursor-pointer focus:outline-none"
               >
                 <option value="ALL">All Categories</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {categories.map((c) => (
+                  <option key={c.category_id} value={c.name}>{c.name}</option>
                 ))}
               </select>
               <Filter className="w-3 h-3 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -528,6 +544,15 @@ export default function ExpensesPage() {
           )}
         </div>
       </div>
+
+      <AddCategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onCategoryCreated={(newCat) => {
+          setCategories(prev => [...prev, newCat]);
+          setFormData(prev => ({ ...prev, category: newCat.name }));
+        }}
+      />
     </AppShell>
   );
 }

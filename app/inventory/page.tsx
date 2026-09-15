@@ -20,6 +20,7 @@ import {
 import { Product, InventoryKPIs } from '@/lib/types';
 import { formatCurrency, calculateGrossMargin } from '@/lib/calculations';
 import AddProductModal from '@/components/inventory/AddProductModal';
+import EditProductModal from '@/components/inventory/EditProductModal';
 import UpdateStockModal from '@/components/inventory/UpdateStockModal';
 import StockHistoryModal from '@/components/inventory/StockHistoryModal';
 import { toast } from 'sonner';
@@ -36,6 +37,7 @@ export default function InventoryPage() {
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editModalProduct, setEditModalProduct] = useState<Product | null>(null);
   const [updateModalProduct, setUpdateModalProduct] = useState<Product | null>(null);
   const [historyModalProduct, setHistoryModalProduct] = useState<Product | null>(null);
 
@@ -541,18 +543,25 @@ export default function InventoryPage() {
                     <span className="truncate max-w-[140px] text-[11px]">{statusText}</span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditModalProduct(product)}
+                      className="px-3 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all"
+                    >
+                      Edit
+                    </button>
                     <button
                       type="button"
                       onClick={() => setHistoryModalProduct(product)}
-                      className="px-3.5 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all"
+                      className="px-3 py-1.5 rounded-full bg-white border border-neutral-200/80 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50 shadow-sm transition-all"
                     >
                       History
                     </button>
                     <button
                       type="button"
                       onClick={() => setUpdateModalProduct(product)}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-medium shadow-sm transition-all ${actionClass}`}
+                      className={`px-3.5 py-1.5 rounded-full text-[11px] font-medium shadow-sm transition-all ${actionClass}`}
                     >
                       {actionLabel}
                     </button>
@@ -607,6 +616,13 @@ export default function InventoryPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
+                            onClick={() => setEditModalProduct(p)}
+                            className="px-2.5 py-1 rounded-full bg-white border border-neutral-200 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setHistoryModalProduct(p)}
                             className="px-3 py-1 rounded-full bg-white border border-neutral-200 text-[11px] font-medium text-neutral-700 hover:bg-neutral-50"
                           >
@@ -635,6 +651,16 @@ export default function InventoryPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onProductCreated={handleProductCreated}
+      />
+
+      <EditProductModal
+        product={editModalProduct}
+        isOpen={!!editModalProduct}
+        onClose={() => setEditModalProduct(null)}
+        onProductUpdated={(updatedProd) => {
+          setProducts(prev => prev.map(p => p.product_id === updatedProd.product_id ? updatedProd : p));
+          fetchInventory();
+        }}
       />
 
       <UpdateStockModal
