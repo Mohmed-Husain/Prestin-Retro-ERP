@@ -130,7 +130,7 @@ export default function InventoryPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Threadly_Inventory_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `PrestonRetro_Inventory_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -464,7 +464,7 @@ export default function InventoryPage() {
                         <Shirt className="w-8 h-8 opacity-70" />
                       </div>
                       <span className="w-full text-center text-[10px] font-bold text-neutral-700 bg-white/90 py-0.5 rounded-lg shadow-subtle">
-                        {product.fabric_gsm || '220 GSM'}
+                        {product.fabric_gsm || '—'}
                       </span>
                     </div>
 
@@ -495,19 +495,19 @@ export default function InventoryPage() {
                         {product.product_name}
                       </h3>
                       <p className="text-xs text-neutral-400 truncate mt-0.5">
-                        {product.description || '100% Combed Compact Cotton'}
+                        {product.description || 'Standard factory garment'}
                       </p>
 
                       {/* Specs: Color & Sizes */}
                       <div className="flex items-center gap-3 text-[11px] text-neutral-600 mt-2.5">
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-neutral-800" />
-                          <span>{product.color || 'Matte Black'}</span>
+                          <span>{product.color || 'Standard'}</span>
                         </div>
                         <span className="text-neutral-300">•</span>
                         <div className="truncate">
                           <span className="text-neutral-400">Sizes: </span>
-                          <span>{product.size || 'S, M, L, XL'}</span>
+                          <span>{product.size || 'Free Size'}</span>
                         </div>
                       </div>
                     </div>

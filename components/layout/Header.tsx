@@ -15,9 +15,9 @@ export default function Header({ searchPlaceholder = 'Search products, customers
   const [searchValue, setSearchValue] = useState('');
 
   const notifications = [
-    { id: 1, title: 'Low Stock Alert', desc: 'Raw Selvedge Denim Jacket has only 12 Pcs left.', type: 'warning', link: '/inventory' },
-    { id: 2, title: 'Khata Due', desc: 'UrbanThreads Apparel has ₹38,400 pending.', type: 'due', link: '/customers' },
-    { id: 3, title: 'Google Sheets Live', desc: 'All 9 tabs connected & synced with cache.', type: 'info', link: '/settings' },
+    { id: 1, title: 'Database Connected', desc: 'Live two-way sync active with Google Sheets.', type: 'info', link: '/settings' },
+    { id: 2, title: 'Khata Settlement', desc: 'FIFO auto-reconciliation enabled for payments.', type: 'info', link: '/customers' },
+    { id: 3, title: 'ERP Status', desc: 'All modules and data tables operational.', type: 'info', link: '/dashboard' },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

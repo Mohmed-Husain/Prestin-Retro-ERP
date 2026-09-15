@@ -20,7 +20,7 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
     return dateStr;
   };
 
-  const invoiceNum = invoice.invoice_number?.replace(/^INV-/, '') || '210';
+  const invoiceNum = invoice.invoice_number?.replace(/^INV-/, '') || invoice.invoice_id || '—';
   const totalQty = invoice.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
   const subTotal = invoice.subtotal || invoice.total;
   const grandTotal = invoice.total;
@@ -137,7 +137,7 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
             <tr className="border-t-2 border-b-2 border-neutral-300 font-bold text-neutral-900">
               <td colSpan={2} className="py-2 px-3">Total</td>
               <td className="py-2 px-3"></td>
-              <td className="py-2 px-3 text-center">{totalQty || 1}</td>
+              <td className="py-2 px-3 text-center">{totalQty}</td>
               <td colSpan={2}></td>
               <td className="py-2 px-3 text-right">₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
             </tr>

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       gst: body.gst || '',
       address: body.address || '',
       tier: body.tier || 'Regular',
-      credit_limit: Number(body.credit_limit) || 100000,
+      credit_limit: Number(body.credit_limit) || 0,
       contact_person: body.contact_person || '',
       email: body.email || '',
     });

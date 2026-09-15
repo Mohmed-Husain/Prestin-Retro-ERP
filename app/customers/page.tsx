@@ -372,7 +372,7 @@ export default function CustomersPage() {
               filteredCustomers.map((cust) => {
                 const isSelected = cust.customer_id === selectedCustomer?.customer_id;
                 const outstanding = cust.outstanding || 0;
-                const creditLimit = cust.credit_limit || 100000;
+                const creditLimit = cust.credit_limit || 0;
                 const available = Math.max(0, creditLimit - outstanding);
                 const utilPercent = Math.min(100, Math.round((outstanding / creditLimit) * 100));
 
@@ -477,7 +477,7 @@ export default function CustomersPage() {
                     </h2>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-neutral-900 text-white">
-                        {selectedCustomer.tier || 'Tier 1 Wholesale'}
+                        {selectedCustomer.tier || 'Wholesale'}
                       </span>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                         GST Verified
@@ -510,7 +510,7 @@ export default function CustomersPage() {
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-neutral-400" />
                       <span className="font-semibold text-neutral-900">
-                        {selectedCustomer.contact_person || 'Rajesh Sharma (Managing Director)'}
+                        {selectedCustomer.contact_person || selectedCustomer.name}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-neutral-500 pl-5">
@@ -519,7 +519,7 @@ export default function CustomersPage() {
                     </div>
                     <div className="flex items-center gap-2 text-neutral-500 pl-5">
                       <Mail className="w-3 h-3 text-neutral-400" />
-                      <span>{selectedCustomer.email || 'accounts@urbanthreads.in'}</span>
+                      <span>{selectedCustomer.email || 'No email registered'}</span>
                     </div>
                   </div>
 
@@ -543,7 +543,7 @@ export default function CustomersPage() {
                     <span className="text-base font-bold text-neutral-900 mt-1 block">
                       {formatCurrency(selectedCustomer.outstanding || 0)}
                     </span>
-                    <span className="text-[10px] text-neutral-400 mt-0.5 block">Due: 02 June 2025</span>
+                    <span className="text-[10px] text-neutral-400 mt-0.5 block">{selectedCustomer.outstanding && selectedCustomer.outstanding > 0 ? 'Payment Pending' : 'Settled in Full'}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-neutral-50/80 border border-neutral-100 text-center">
@@ -551,10 +551,10 @@ export default function CustomersPage() {
                       LIFETIME VOLUME
                     </span>
                     <span className="text-base font-bold text-neutral-900 mt-1 block">
-                      {formatCompactCurrency(selectedCustomer.total_billed || 1485000)}
+                      {formatCompactCurrency(selectedCustomer.total_billed || 0)}
                     </span>
                     <span className="text-[10px] text-neutral-400 mt-0.5 block">
-                      {customerSales.length || 28} Orders to date
+                      {customerSales.length} Orders to date
                     </span>
                   </div>
 
@@ -563,10 +563,10 @@ export default function CustomersPage() {
                       CREDIT AVAILABLE
                     </span>
                     <span className="text-base font-bold text-emerald-600 mt-1 block">
-                      {formatCurrency(Math.max(0, (selectedCustomer.credit_limit || 150000) - (selectedCustomer.outstanding || 0)))}
+                      {formatCurrency(Math.max(0, (selectedCustomer.credit_limit || 0) - (selectedCustomer.outstanding || 0)))}
                     </span>
                     <span className="text-[10px] text-neutral-400 mt-0.5 block">
-                      Limit: {formatCompactCurrency(selectedCustomer.credit_limit || 150000)}
+                      Limit: {formatCompactCurrency(selectedCustomer.credit_limit || 0)}
                     </span>
                   </div>
 
@@ -575,9 +575,9 @@ export default function CustomersPage() {
                       PAYMENT TRUST
                     </span>
                     <span className="text-base font-bold text-neutral-900 mt-1 block">
-                      96% On-Time
+                      {selectedCustomer.overdue_status === 'healthy' ? 'Good Standing' : 'Overdue Alert'}
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-medium mt-0.5 block">Net-15 Day Term</span>
+                    <span className="text-[10px] text-neutral-500 font-medium mt-0.5 block">Wholesale Khata</span>
                   </div>
                 </div>
 
@@ -585,17 +585,17 @@ export default function CustomersPage() {
                 <div className="mt-5 pt-4 border-t border-neutral-100">
                   <div className="flex items-center justify-between text-xs mb-1.5">
                     <span className="font-semibold text-neutral-700">
-                      Credit Limit Utilization ({formatCurrency(selectedCustomer.outstanding || 0)} / {formatCurrency(selectedCustomer.credit_limit || 150000)})
+                      Credit Limit Utilization ({formatCurrency(selectedCustomer.outstanding || 0)} / {formatCurrency(selectedCustomer.credit_limit || 0)})
                     </span>
                     <span className="font-bold text-neutral-900">
-                      {Math.min(100, Math.round(((selectedCustomer.outstanding || 0) / (selectedCustomer.credit_limit || 150000)) * 100))}% Utilized
+                      {(selectedCustomer.credit_limit && selectedCustomer.credit_limit > 0) ? Math.min(100, Math.round(((selectedCustomer.outstanding || 0) / selectedCustomer.credit_limit) * 100)) : 0}% Utilized
                     </span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-neutral-100 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-neutral-900 transition-all duration-500"
                       style={{
-                        width: `${Math.min(100, Math.round(((selectedCustomer.outstanding || 0) / (selectedCustomer.credit_limit || 150000)) * 100))}%`,
+                        width: `${(selectedCustomer.credit_limit && selectedCustomer.credit_limit > 0) ? Math.min(100, Math.round(((selectedCustomer.outstanding || 0) / selectedCustomer.credit_limit) * 100)) : 0}%`,
                       }}
                     />
                   </div>
@@ -615,7 +615,7 @@ export default function CustomersPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1.5 rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
-                      Filter Year: 2025
+                      All Time
                     </span>
                     <button
                       type="button"
@@ -643,7 +643,7 @@ export default function CustomersPage() {
                       const isUnpaid = sale.status === 'Unpaid';
                       const itemsText = sale.items && sale.items.length > 0
                         ? `${sale.items.reduce((sum, i) => sum + i.quantity, 0)} Pcs • ${sale.items.map(i => `${i.sku} (${i.quantity})`).join(', ')}`
-                        : '85 Pcs • Heavyweight Boxy Tee (50), Relaxed Hoodie (20)';
+                        : (sale.subtotal ? `Total: ${formatCurrency(sale.subtotal)}` : 'Wholesale shipment');
 
                       return (
                         <div key={sale.invoice_id} className="py-4 flex items-center justify-between gap-4 group">
@@ -662,7 +662,7 @@ export default function CustomersPage() {
                                 </span>
                               )}
                               <span className="text-xs text-neutral-400">
-                                {sale.date === '2025-05-26' ? 'Generated Today (26 May 2025)' : sale.date}
+                                {sale.date || 'Recent'}
                               </span>
                             </div>
 
@@ -683,7 +683,7 @@ export default function CustomersPage() {
                               {!isUnpaid && (
                                 <>
                                   <span>•</span>
-                                  <span className="text-neutral-400">Cleared on 18 May (HDFC #49102)</span>
+                                  <span className="text-neutral-400">Settled in full</span>
                                 </>
                               )}
                             </div>

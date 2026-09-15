@@ -298,7 +298,7 @@ export default function ExpensesPage() {
             </div>
             <ExpenseBreakdownDonut
               data={kpis?.breakdown || []}
-              totalAmount={kpis?.thisMonthExpenses || 56780}
+              totalAmount={kpis?.thisMonthExpenses || 0}
             />
           </div>
         </div>

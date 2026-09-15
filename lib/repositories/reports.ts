@@ -15,7 +15,7 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
   const saleItems = rowsToObjects(saleItemsRows, mappers.rowToSaleItem);
 
-  // Current date context (simulated or live: May 2025 matches seed data)
+  // Live current date context
   const now = new Date();
   const currentMonthStr = now.toISOString().slice(0, 7);
   const todayStr = now.toISOString().split('T')[0];

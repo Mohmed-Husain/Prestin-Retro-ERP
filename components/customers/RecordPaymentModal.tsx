@@ -15,11 +15,19 @@ interface RecordPaymentModalProps {
 
 export default function RecordPaymentModal({ customer, isOpen, onClose, onPaymentRecorded }: RecordPaymentModalProps) {
   const [loading, setLoading] = useState(false);
-  const [amount, setAmount] = useState<number>(customer?.outstanding || 50000);
+  const [amount, setAmount] = useState<number>(customer?.outstanding && customer.outstanding > 0 ? customer.outstanding : 0);
   const [method, setMethod] = useState('Bank NEFT');
   const [reference, setReference] = useState('NEFT' + Math.floor(1000000 + Math.random() * 9000000));
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('Bank NEFT Payment received');
+
+  React.useEffect(() => {
+    if (customer?.outstanding && customer.outstanding > 0) {
+      setAmount(customer.outstanding);
+    } else {
+      setAmount(0);
+    }
+  }, [customer]);
 
   if (!isOpen || !customer) return null;
 
