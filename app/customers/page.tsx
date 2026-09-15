@@ -244,10 +244,10 @@ export default function CustomersPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? kpis.totalBuyers : '148'}
+            {kpis ? kpis.totalBuyers : (loading ? '—' : 0)}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>+8 this mo</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Active accounts</span>
           </div>
           <div className="text-[10px] text-neutral-400 mt-0.5">Verified garment retailers</div>
         </div>
@@ -257,18 +257,18 @@ export default function CustomersPage() {
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-xs font-medium text-neutral-500">TOTAL OUTSTANDING</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100">
-              {kpis ? `${kpis.overdueCount} Overdue` : '18 Overdue'}
+              {kpis ? `${kpis.overdueCount} Overdue` : '0 Overdue'}
             </span>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.totalOutstanding) : '₹ 4,82,450'}
+            {kpis ? formatCurrency(kpis.totalOutstanding) : (loading ? '—' : '₹ 0')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
             Pending factory collection
           </div>
         </div>
 
-        {/* KPI 3: COLLECTED (MAY) */}
+        {/* KPI 3: COLLECTED THIS MONTH */}
         <div className="floating-card p-5">
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-xs font-medium text-neutral-500">COLLECTED (MAY)</span>
@@ -291,10 +291,10 @@ export default function CustomersPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.creditExtended) : '₹ 8,50,000'}
+            {kpis ? formatCurrency(kpis.creditExtended) : (loading ? '—' : '₹ 0')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
-            Across 34 wholesale terms
+            Buyer credit limits
           </div>
         </div>
 
@@ -305,7 +305,7 @@ export default function CustomersPage() {
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? `${kpis.avgSettlementDays} Days` : '14 Days'}
+            {kpis ? `${kpis.avgSettlementDays} Days` : (loading ? '—' : '0 Days')}
           </div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1">
             Healthy credit rotation

@@ -55,27 +55,53 @@ export default function ReportsPage() {
   const filteredMetrics = useMemo(() => {
     if (!data) {
       return {
-        revenue: 348200,
-        cogs: 124300,
-        grossProfit: 223900,
-        expenses: 56780,
-        netProfit: 167120,
+        revenue: 0,
+        cogs: 0,
+        grossProfit: 0,
+        expenses: 0,
+        netProfit: 0,
         salesTrend: [],
         expenseTrend: [],
       };
     }
 
-    let multiplier = 1;
-    if (timeFilter === 'today') multiplier = 0.08;
-    else if (timeFilter === 'week') multiplier = 0.28;
-    else if (timeFilter === 'month') multiplier = 1.0;
-    else if (timeFilter === 'custom') multiplier = 0.65;
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const nowTime = now.getTime();
+    const weekAgoTime = nowTime - 7 * 24 * 60 * 60 * 1000;
 
-    const revenue = Math.round(data.totalSales * multiplier);
-    const cogs = Math.round(data.cogs * multiplier);
-    const grossProfit = Math.max(0, revenue - cogs);
-    const expenses = Math.round(data.totalExpenses * multiplier);
-    const netProfit = Math.max(0, grossProfit - expenses);
+    const salesTrend = (data.salesTrend || []).filter(item => {
+      if (timeFilter === 'today') return item.date === todayStr || item.date === todayStr.slice(5);
+      if (timeFilter === 'week') {
+        const itemTime = new Date(item.date).getTime();
+        return isNaN(itemTime) || itemTime >= weekAgoTime;
+      }
+      if (timeFilter === 'custom' && customStartDate && customEndDate) {
+        return item.date >= customStartDate && item.date <= customEndDate;
+      }
+      return true;
+    });
+
+    const expenseTrend = (data.expenseTrend || []).filter(item => {
+      if (timeFilter === 'today') return item.date === todayStr || item.date === todayStr.slice(5);
+      if (timeFilter === 'week') {
+        const itemTime = new Date(item.date).getTime();
+        return isNaN(itemTime) || itemTime >= weekAgoTime;
+      }
+      if (timeFilter === 'custom' && customStartDate && customEndDate) {
+        return item.date >= customStartDate && item.date <= customEndDate;
+      }
+      return true;
+    });
+
+    // Real dynamic totals from filtered periods
+    const isFullPeriod = timeFilter === 'month';
+    const revenue = isFullPeriod ? data.totalSales : salesTrend.reduce((s, i) => s + i.sales, 0);
+    const expenses = isFullPeriod ? data.totalExpenses : expenseTrend.reduce((s, i) => s + i.amount, 0);
+    const cogsRatio = data.totalSales > 0 ? data.cogs / data.totalSales : 0;
+    const cogs = isFullPeriod ? data.cogs : Math.round(revenue * cogsRatio);
+    const grossProfit = revenue - cogs;
+    const netProfit = grossProfit - expenses;
 
     return {
       revenue,
@@ -83,10 +109,10 @@ export default function ReportsPage() {
       grossProfit,
       expenses,
       netProfit,
-      salesTrend: data.salesTrend || [],
-      expenseTrend: data.expenseTrend || [],
+      salesTrend,
+      expenseTrend,
     };
-  }, [data, timeFilter]);
+  }, [data, timeFilter, customStartDate, customEndDate]);
 
   const handleExportReport = () => {
     if (!data) return;
@@ -98,7 +124,7 @@ export default function ReportsPage() {
       ['Expenses', 'Expense Total', String(filteredMetrics.expenses)],
       ['Net Profit', 'Gross Profit - Expenses', String(filteredMetrics.netProfit)],
       ['Total Invoices', 'Sales Count', String(data.totalInvoices)],
-      ['Best Performing Month', 'May 2025', String(data.bestMonth.netProfit)],
+      ['Best Performing Month', data?.bestMonth?.month || 'Current', String(data?.bestMonth?.netProfit || 0)],
     ];
     const csvContent = 'data:text/csv;charset=utf-8,' + reportSummary.map(e => e.join(',')).join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -240,7 +266,7 @@ export default function ReportsPage() {
             {formatCurrency(filteredMetrics.revenue)}
           </div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1">
-            Total Invoices: {data?.totalInvoices || 186}
+            Total Invoices: {data?.totalInvoices || 0}
           </div>
         </div>
 
@@ -396,7 +422,13 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {data?.topSellingProducts.map((p) => (
+                  {(!data?.topSellingProducts || data.topSellingProducts.length === 0) ? (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-neutral-400 text-xs">
+                        No product sales recorded yet.
+                      </td>
+                    </tr>
+                  ) : data.topSellingProducts.map((p) => (
                     <tr key={p.rank} className="hover:bg-neutral-50/50">
                       <td className="py-3 text-center font-bold text-neutral-400">{p.rank}</td>
                       <td className="py-3 px-3">
@@ -484,7 +516,7 @@ export default function ReportsPage() {
                 <div>
                   <span className="text-[10px] font-semibold text-neutral-400 block">Best Month</span>
                   <span className="text-xs font-bold text-neutral-900">
-                    {data?.bestMonth.month || 'May 2025'}
+                    {data?.bestMonth?.month || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
                 </div>
               </div>

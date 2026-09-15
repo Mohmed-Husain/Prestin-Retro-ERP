@@ -44,7 +44,7 @@ export default function SalesVsExpensesChart({ data }: SalesVsExpensesChartProps
             tickLine={false} 
             tick={{ fill: '#888888', fontSize: 10 }}
             tickFormatter={(val) => `${val / 1000}K`}
-            domain={[0, 200000]}
+            domain={[0, 'auto']}
           />
           <Tooltip 
             formatter={(value: any, name: any) => [

@@ -31,7 +31,7 @@ export default function MonthlyProfitBarChart({ data }: MonthlyProfitBarChartPro
             tickLine={false} 
             tick={{ fill: '#888888', fontSize: 9 }}
             tickFormatter={(val) => `${val / 1000}K`}
-            domain={[0, 100000]}
+            domain={['auto', 'auto']}
           />
           <Tooltip 
             formatter={(value: any) => [formatCurrency(Number(value)), 'Net Profit']}

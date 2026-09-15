@@ -217,11 +217,10 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.todayExpenses) : '₹ 12,450'}
+            {kpis ? formatCurrency(kpis.todayExpenses) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-emerald-600 font-semibold">
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>-8.2% vs yesterday</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-neutral-400">
+            <span>Live from Expenses</span>
           </div>
         </div>
 
@@ -234,11 +233,10 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.thisMonthExpenses) : '₹ 56,780'}
+            {kpis ? formatCurrency(kpis.thisMonthExpenses) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-rose-500 font-semibold">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>+12% vs last month</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-neutral-400">
+            <span>Current Month</span>
           </div>
         </div>
 
@@ -251,11 +249,10 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.monthlyAverage) : '₹ 45,200'}
+            {kpis ? formatCurrency(kpis.monthlyAverage) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 mt-2 text-[11px] text-emerald-600 font-semibold">
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>-8% vs past quarter</span>
+          <div className="flex items-center gap-1 mt-2 text-[11px] text-neutral-400">
+            <span>Across active months</span>
           </div>
         </div>
 
@@ -268,10 +265,10 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight truncate">
-            {kpis ? formatCurrency(kpis.totalThisYear) : '₹ 4,82,300'}
+            {kpis ? formatCurrency(kpis.totalThisYear) : (loading ? '—' : '₹ 0')}
           </div>
           <div className="flex items-center gap-1 mt-2 text-[11px] text-neutral-400">
-            <span>Fiscal Year 2025-26</span>
+            <span>Current Fiscal Year</span>
           </div>
         </div>
       </div>

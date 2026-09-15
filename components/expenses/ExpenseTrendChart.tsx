@@ -39,7 +39,7 @@ export default function ExpenseTrendChart({ data }: ExpenseTrendChartProps) {
             tickLine={false} 
             tick={{ fill: '#888888', fontSize: 10 }}
             tickFormatter={(val) => `${val / 1000}K`}
-            domain={[0, 60000]}
+            domain={[0, 'auto']}
           />
           <Tooltip 
             formatter={(value: any) => [formatCurrency(Number(value)), 'Expense']}

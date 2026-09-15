@@ -127,13 +127,9 @@ export default function PristineRetroInvoice({ invoice, customer }: PristineRetr
               ))
             ) : (
               <tr>
-                <td className="py-2.5 px-2 text-center text-neutral-500">1</td>
-                <td className="py-2.5 px-3 font-medium text-neutral-900">Garment Batch Lot</td>
-                <td className="py-2.5 px-3 text-center text-neutral-400">6203</td>
-                <td className="py-2.5 px-3 text-center font-medium">1</td>
-                <td className="py-2.5 px-3 text-center text-neutral-600">Pcs</td>
-                <td className="py-2.5 px-3 text-right">₹ {grandTotal.toFixed(1)}</td>
-                <td className="py-2.5 px-3 text-right font-medium">₹ {grandTotal.toFixed(1)}</td>
+                <td colSpan={7} className="py-6 text-center text-neutral-400 text-xs italic">
+                  No line items on this invoice
+                </td>
               </tr>
             )}
           </tbody>

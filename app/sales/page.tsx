@@ -168,7 +168,7 @@ export default function SalesPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Threadly_Sales_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `PrestonRetro_Sales_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -231,10 +231,10 @@ export default function SalesPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.todayBilled) : '₹ 58,105'}
+            {kpis ? formatCurrency(kpis.todayBilled) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↑ 12% vs yesterday</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Live from Sales</span>
           </div>
         </div>
 
@@ -242,13 +242,13 @@ export default function SalesPage() {
         <div className="floating-card p-5">
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-xs font-medium text-neutral-500">MONTHLY BILLED</span>
-            <span className="text-[11px] text-emerald-600 font-medium">↑ 8%</span>
+            <span className="text-[11px] text-neutral-400 font-medium">Month Total</span>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.monthlyBilled) : '₹ 3,48,200'}
+            {kpis ? formatCurrency(kpis.monthlyBilled) : (loading ? '—' : '₹ 0')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
-            May 2025 factory orders
+            Fulfilled factory orders
           </div>
         </div>
 
@@ -261,7 +261,7 @@ export default function SalesPage() {
             </span>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.unpaidAmount) : '₹ 1,05,055'}
+            {kpis ? formatCurrency(kpis.unpaidAmount) : (loading ? '—' : '₹ 0')}
           </div>
           <div className="text-[11px] text-amber-600 font-medium mt-1">
             Pending buyer settlement
@@ -277,7 +277,7 @@ export default function SalesPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? `${kpis.totalUnitsDispatched} Pcs` : '485 Pcs'}
+            {kpis ? `${kpis.totalUnitsDispatched} Pcs` : (loading ? '—' : '0 Pcs')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
             Across {sales.length} fulfilled batches

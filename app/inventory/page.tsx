@@ -219,10 +219,10 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? kpis.totalSkus.toLocaleString('en-IN') : products.length || '1,420'}
+            {kpis ? kpis.totalSkus.toLocaleString('en-IN') : (loading ? '—' : '0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↑ +14 this week</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Catalog Items</span>
           </div>
         </div>
 
@@ -235,7 +235,7 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? formatCurrency(kpis.inventoryValuation) : '₹ 18,45,000'}
+            {kpis ? formatCurrency(kpis.inventoryValuation) : (loading ? '—' : '₹ 0')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
             At factory cost
@@ -251,7 +251,7 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? `${kpis.lowStockCount} Items` : '8 Items'}
+            {kpis ? `${kpis.lowStockCount} Items` : (loading ? '—' : '0 Items')}
           </div>
           <div className="text-[11px] text-amber-600 font-medium mt-1">
             Requires Reorder
@@ -267,7 +267,7 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-rose-600 tracking-tight">
-            {kpis ? `${kpis.outOfStockCount} SKUs` : '3 SKUs'}
+            {kpis ? `${kpis.outOfStockCount} SKUs` : (loading ? '—' : '0 SKUs')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
             0 units on floor
@@ -283,10 +283,10 @@ export default function InventoryPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {kpis ? `${kpis.totalUnits.toLocaleString('en-IN')} Pcs` : '4,850 Pcs'}
+            {kpis ? `${kpis.totalUnits.toLocaleString('en-IN')} Pcs` : (loading ? '—' : '0 Pcs')}
           </div>
           <div className="text-[11px] text-neutral-400 font-medium mt-1">
-            18 Active batches
+            Warehouse Stock
           </div>
         </div>
       </div>

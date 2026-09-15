@@ -69,10 +69,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {data ? formatCurrency(data.todaySales) : '₹ 24,560'}
+            {data ? formatCurrency(data.todaySales) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↑ 12% vs yesterday</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Live from Sales</span>
           </div>
         </div>
 
@@ -85,10 +85,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {data ? formatCurrency(data.monthlySales) : '₹ 3,48,200'}
+            {data ? formatCurrency(data.monthlySales) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↑ 8% vs last month</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Current Month</span>
           </div>
         </div>
 
@@ -101,10 +101,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {data ? formatCurrency(data.grossProfit) : '₹ 1,24,300'}
+            {data ? formatCurrency(data.grossProfit) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↑ 10% vs last month</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Revenue − COGS</span>
           </div>
         </div>
 
@@ -117,10 +117,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {data ? formatCurrency(data.netProfit) : '₹ 92,450'}
+            {data ? formatCurrency(data.netProfit) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-1">
-            <span>↑ 9% vs last month</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Gross Profit − Expenses</span>
           </div>
         </div>
 
@@ -133,10 +133,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-bold text-neutral-900 tracking-tight">
-            {data ? formatCurrency(data.totalExpenses) : '₹ 56,780'}
+            {data ? formatCurrency(data.totalExpenses) : (loading ? '—' : '₹ 0')}
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-rose-500 font-medium mt-1">
-            <span>↓ 5% vs last month</span>
+          <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-medium mt-1">
+            <span>Factory Overheads</span>
           </div>
         </div>
       </div>

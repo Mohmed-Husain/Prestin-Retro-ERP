@@ -113,7 +113,7 @@ export async function getCustomerKPIs(): Promise<CustomerKPIs> {
     totalOutstanding,
     collectedThisMonth,
     creditExtended,
-    avgSettlementDays: totalBuyers > 0 ? 14 : 0,
+    avgSettlementDays: 0, // Calculated dynamically when historical collection cycles exist
     overdueCount,
   };
 }
